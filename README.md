@@ -1,137 +1,288 @@
-Tontine Trust - Mobile d'Épargne Décentralisée
+# TontineChain
 
-Tontine Trust est une application mobile conçue pour moderniser et sécuriser le système de tontine. Elle combine l'aspect communautaire et la flexibilité des tontines traditionnelles avec la robustesse et la transparence de la technologie blockchain et des solutions Web3.
+**Tontine digitale pour l'Afrique de l'Ouest** — cotisations en FCFA (Mobile Money via Kkiapay), trésor collectif en Bitcoin, preuves cryptographiques secp256k1 et gestion par bot WhatsApp.
 
-🚀 Objectif
-Permettre aux membres d'une tontine de gérer leurs cotisations, de suivre l'ordre de passage, de vérifier les fonds disponibles et de sécuriser leurs transactions via une plateforme numérique sécurisée.
+Projet de soutenance : moderniser la tontine informelle (ROSCA) sans exclure les utilisateurs qui n'ont qu'un téléphone et Mobile Money.
 
-✨ Fonctionnalités Clés
-1. Gestion de Compte et Sécurité
-Authentification Sécurisée : Connexion via email et mot de passe.
-Vérification d'Identité : Processus d'inscription avec vérification de l'utilisateur.
-Profil Utilisateur : Visualisation des informations personnelles, solde du portefeuille et score de confiance.
-2. Gestion des Tontines (Groupes)
-Création et Adhésion : Possibilité de créer de nouveaux groupes de tontine ou de rejoindre des groupes existants.
-Ordre de Passage : Calendrier et suivi clair de qui doit recevoir les fonds à quel tour.
-Statuts : Suivi du statut des paiements (En attente, Cotisé, Paiement effectué).
-3. Finances et Paiements
-Cotisations : Interface simple pour payer sa part mensuelle.
-Cagnotte : Affichage transparent de la cagnotte totale du groupe et du montant du prochain tour.
-Dépôt de Garantie : Système de sécurité pour garantir l'engagement des membres (via portefeuille crypto).
-4. Points et Réputation
-Système de Points : Acquisition de points pour la participation et les actions positives.
-Score de Confiance : Calcul du score basé sur l'activité et la régularité (par exemple, 1000 points pour l'inscription, points déduits en cas de défaut de paiement).
-5. Interface Utilisateur
-Design Responsive : Adapté pour mobile et tablette.
-Notifications : Alertes pour les paiements à venir et les rappels.
-Thème Sombre : Support complet du mode sombre.
-🔗 Architecture Technique
-### Frontend
-- **Framework** : React 18 + TypeScript
-- **Build** : Vite 8
-- **Routing** : React Router v6
-- **Styling** : TailwindCSS + shadcn/ui
-- **State Management** : TanStack Query (React Query)
-- **Theming** : next-themes (dark/light mode)
-- **Mobile** : PWA installable mobile-first
+---
 
-### Backend & Base de données
-- **BDD** : Supabase (PostgreSQL)
-- **Auth** : Supabase Auth
-- **Real-time** : Supabase Realtime (subscriptions)
-- **Backend Serverless** : Convex (règles métier, crons)
+## Fonctionnalités
 
-### Paiements & Assurances
-- **Provider** : Kkiapay (Mobile Money Bénin)
-- **Widget** : kkiapay-react
-- **API** : Intégration custom dans lib/kkiapay.ts
-- **Assurance Vie** : Intégration partenaire pour couvrir les décès
+| Module | Description |
+|--------|-------------|
+| **Tontine ROSCA** | Créer un groupe, inviter par lien, définir montant/fréquence/ordre de passage, activer le premier tour |
+| **Cotisations FCFA** | Portefeuille interne + paiement Kkiapay (sandbox) ; prélèvement et suivi par tour |
+| **Trésor Bitcoin** | Conversion FCFA → sats, pool collectif, cours live CoinGecko, engagements signés |
+| **Score de confiance** | Ponctualité, participation, ancienneté — débloque les groupes premium |
+| **Bot WhatsApp** | Commandes `/solde`, `/groupes`, `/cotiser`, `/bitcoin`, `/liquidity`, `/score`, `/notifs` |
+| **PWA** | Installable sur mobile (manifest + service worker) |
 
-### Web3 & Blockchain
-- **Réseau** : Celo Alfajores
-- **Outils** : viem
-- **Fonctionnalité** : Signature cryptographique des reconnaissances de dette pour validation communautaire et déclenchement automatique des versements.
-📊 Architecture des Données
-La base de données Supabase est structurée autour de plusieurs tables principales :
+---
 
-users : Informations des utilisateurs (nom, email, profil, score).
-user_groups : Association entre utilisateurs et groupes.
-groups : Détails des tontines (montant, tour actuel, cycle).
-tontine_rotations : Gestion du tour de passage et des paiements.
-guarantee_deposits : Suivi des dépôts de garantie.
-🛠️ Installation & Démarrage
-Prérequis
-Node.js (16.x ou supérieur)
-npm ou yarn
-Clé API Supabase (URL et Anon Key)
-Étapes d'installation
+## Stack technique
 
-1. Cloner le dépôt :
+| Couche | Technologie |
+|--------|-------------|
+| Frontend | React 18, TypeScript, Vite 8, Tailwind CSS, shadcn/ui |
+| Base de données & auth | Supabase (PostgreSQL + Auth + RLS) |
+| Paiements | Kkiapay (`kkiapay-react`) |
+| Bitcoin | CoinGecko, mempool.space, signatures secp256k1 (viem) |
+| WhatsApp | Simulateur web + webhook dev (Vite) + Edge Function Supabase |
+| Optionnel | Convex — uniquement si `VITE_CONVEX_URL` est renseigné ; sinon tout passe par Supabase |
 
+> **Mode par défaut : Supabase seul.** Convex n'est pas requis pour la démo ni la soutenance.
 
-git clone <repository-url>
+---
+
+## Prérequis
+
+- **Node.js** 18 ou plus
+- **npm**
+- **Docker Desktop** — pour Supabase en local (auth, groupes, cotisations)
+- **CLI Supabase** — sur Windows, préférer l'installation native ([documentation](https://supabase.com/docs/guides/cli)) plutôt que `npx supabase` si le binaire `win32-x64` n'est pas trouvé
+
+Sans Docker, l'application démarre quand même : landing, trésor Bitcoin et simulateur WhatsApp restent accessibles. L'inscription et les groupes nécessitent une instance Supabase (locale ou cloud).
+
+---
+
+## Installation
+
+```bash
+git clone <repo-url>
 cd tontine-trust
-2. Installer les dépendances :
-
-
 npm install
-3. Configuration de l'environnement :
+cp .env.example .env
+```
 
-Créez un fichier .env à la racine du projet avec les variables suivantes :
+### Supabase local (recommandé pour les tests complets)
 
-# .env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
-VITE_KKIAPAY_SECRET=your-kkiapay-secret
-VITE_KKIAPAY_PUBLIC_KEY=your-kkiapay-public-key
-VITE_KKIAPAY_PRIVATE_KEY=your-kkiapay-private-key
-VITE_KKIAPAY_SANDBOX=true
-VITE_CONVEX_URL=https://your-convex-deployment.convex.cloud
+```bash
+supabase start          # ou : npm run supabase:start
+supabase db reset       # migrations + seed
+```
 
+Copier dans `.env` l'URL et la clé `anon` affichées par `supabase status`.
 
+### Lancer l'application
 
-4. Lancer l'application :
-
-
+```bash
 npm run dev
-L'application sera accessible à l'adresse indiquée par Vite (généralement http://localhost:5173).
-
-5. Lancer Convex en développement :
-
-```bash
-npx convex dev
 ```
 
-Variables serveur Convex à configurer dans le dashboard Convex :
+→ [http://localhost:8080](http://localhost:8080)
+
+Setup en une commande (Linux/macOS) :
 
 ```bash
-SUPABASE_AUTH_ISSUER=https://your-project.supabase.co/auth/v1
-KKIAPAY_DEMO_MODE=true
-KKIAPAY_BASE_URL=https://api.kkiapay.me
-KKIAPAY_PRIVATE_KEY=your-server-side-private-key
-TONTINECHAIN_CHAIN_ID=44787
-TONTINECHAIN_CONTRACT_ADDRESS=0x0000000000000000000000000000000000002026
+npm run local:setup && npm run dev
 ```
 
-📂 Structure du Projet
-src/components/ : Composants React réutilisables (TopBar, UI widgets).
-src/lib/ : Configuration (supabase).
-src/pages/ : Pages de l'application (Inscription, Connexion, Home, GroupeDetail).
-supabase_schema.sql : Schéma de base de données à exécuter dans votre projet Supabase.
+---
 
-5. Migration de la base de données :
+## Variables d'environnement
 
- Après avoir exécuter le supabase_schema.sql exécutez le fichier de migration SQL dans votre projet Supabase :
+Fichier `.env` à la racine (voir `.env.example`) :
+
+| Variable | Obligatoire | Description |
+|----------|-------------|-------------|
+| `VITE_SUPABASE_URL` | Oui* | URL API Supabase |
+| `VITE_SUPABASE_ANON_KEY` | Oui* | Clé publique anon |
+| `VITE_KKIAPAY_PUBLIC_KEY` | Non | Clé sandbox Kkiapay pour les cotisations MoMo |
+| `VITE_CONVEX_URL` | Non | Laisser vide pour le mode Supabase seul |
+
+\* Requis pour inscription, groupes et persistance du trésor Bitcoin.
+
+**Secrets Edge Function** `whatsapp-webhook` (dashboard Supabase ou CLI, pas dans `.env` frontend) :
+
+| Secret | Description |
+|--------|-------------|
+| `WHATSAPP_VERIFY_TOKEN` | Token de vérification Meta (ex. `tontinechain`) |
+| `WHATSAPP_TOKEN` | Token d'accès Graph API |
+| `WHATSAPP_PHONE_NUMBER_ID` | ID du numéro WhatsApp Business |
+
+---
+
+## Routes
+
+### Publiques (sans connexion)
+
+| Route | Page |
+|-------|------|
+| `/` | Landing |
+| `/crypto` | Trésor Bitcoin, cours live, signature d'engagement |
+| `/whatsapp` | Simulateur du bot |
+| `/connexion` | Connexion |
+| `/inscription` | Création de compte |
+
+### Authentifiées
+
+| Route | Page |
+|-------|------|
+| `/home` | Tableau de bord |
+| `/creer` | Créer une tontine |
+| `/rechercher` | Rechercher / rejoindre |
+| `/rejoindre/:id` | Rejoindre via invitation |
+| `/groupe/:id` | Détail groupe, activation, preuves Bitcoin |
+| `/cotiser` | Payer sa part (Kkiapay) |
+| `/portefeuille` | Solde FCFA |
+| `/score` | Score de confiance |
+| `/notifications` | Alertes |
+| `/profil`, `/parametres` | Compte et téléphone WhatsApp |
+| `/admin` | Administration |
+
+---
+
+## Base de données
+
+Migrations dans `supabase/migrations/` :
+
+| Fichier | Contenu |
+|---------|---------|
+| `20260629160000_init_tontine_schema.sql` | Schéma complet (profiles, groups, cotisations, RLS, triggers) |
+| `20260629160001_migrate_kkiapay.sql` | Intégration paiements Kkiapay |
+| `20260629170000_bitcoin_treasury.sql` | Trésor BTC + RPC `rpc_activate_group` |
+
+Tables Bitcoin :
+
+- `btc_treasury_pool` — trésor global (singleton)
+- `btc_user_wallets` — sats par utilisateur
+- `bitcoin_commitments` — engagements signés secp256k1
+
+Seed : `supabase/seed.sql` (données de démo dont le pool BTC).
+
+---
+
+## Bot WhatsApp
+
+Module unique : `supabase/functions/_shared/whatsapp/` (fusion TontineChain + FlashBot). Réexport : `src/lib/whatsappCommands.ts`.
+
+### Commandes
+
+**Gestion tontine** — `CREER` · `REJOINDRE TONT-XXXX` · `TONTINE` · `MEMBRES` · `HISTORIQUE` · `AIDE` · `ANNULER`
+
+**App & portefeuille** — `/aide` · `/solde` · `/groupes` · `/cotiser` · `/score` · `/notifs`
+
+**Bitcoin** — `/bitcoin` · `/liquidity`
+
+Le numéro WhatsApp doit correspondre au `phone` du profil (création auto en prod via `service_role`).
+
+### Développement (Vite)
+
+```
+POST http://localhost:8080/api/whatsapp/webhook
+{ "from": "+22990000000", "body": "/aide" }
+```
+
+Local : `SUPABASE_SERVICE_ROLE_KEY` dans `.env` + `npx supabase db reset` pour `CREER`/`REJOINDRE`.
+
+```powershell
+.\scripts\test-whatsapp-webhook.ps1
+.\scripts\test-whatsapp-bot.ps1
+npm run test
+```
+
+### Production (Meta + Supabase)
 
 ```bash
-# Dans la console SQL de Supabase, copiez-collez le contenu de :
-migrate_to_kkiapay.sql
+supabase functions deploy whatsapp-webhook
+supabase functions deploy tontine-automation
+supabase secrets set WHATSAPP_VERIFY_TOKEN=... WHATSAPP_TOKEN=... WHATSAPP_PHONE_NUMBER_ID=... APP_ORIGIN=... CRON_SECRET=...
 ```
 
-Ce fichier crée les tables nécessaires pour le système de paiement Kkiapay et les transactions.
+- Webhook Meta : `https://<ref>.supabase.co/functions/v1/whatsapp-webhook`
+- Cron tours : `POST .../tontine-automation` + `Authorization: Bearer <CRON_SECRET>`
 
-6.Installer le package de kkiapay
+Code : `supabase/functions/whatsapp-webhook/` · `_shared/whatsapp/`
+
+---
+
+## Script démo soutenance (~10 min)
+
+| # | Action | Point à montrer au jury |
+|---|--------|-------------------------|
+| 1 | Ouvrir `/` | Proposition de valeur : tontine + Bitcoin + MoMo + WhatsApp |
+| 2 | `/crypto` | Prix BTC live, trésor en sats, signature d'engagement |
+| 3 | `/whatsapp` | Tester `AIDE`, `CREER`, `/bitcoin`, `/solde` |
+| 4 | `/inscription` → `/home` | Compte, portefeuille FCFA |
+| 5 | Créer groupe → inviter → **Activer** | `rpc_activate_group` (sans Convex) |
+| 6 | `/groupe/:id` | Registre des membres, preuves Bitcoin |
+| 7 | `/cotiser` | Flux paiement Kkiapay (sandbox) |
+
+**Pitch en une phrase :** digitaliser les tontines informelles avec traçabilité, Mobile Money local, réserve Bitcoin et accès WhatsApp — inclusion financière pour ceux qui n'installent pas d'app bancaire.
+
+---
+
+## Scripts npm
 
 ```bash
-npm install kkiapay-react
+npm run dev              # Serveur de développement (port 8080)
+npm run build            # Build production → dist/
+npm run preview          # Prévisualiser le build
+npm run lint             # ESLint
+npm run test             # Vitest (18 tests)
+npm run test:all         # test + build
+npm run verify:local     # test + build + WhatsApp (PowerShell)
+
+npm run supabase:start   # Démarrer Supabase local (Docker)
+npm run supabase:stop    # Arrêter Supabase local
+npm run supabase:reset   # Réappliquer migrations + seed
+npm run local:setup      # start + reset
 ```
+
+---
+
+## Structure du projet
+
+```
+tontine-trust/
+├── src/
+│   ├── pages/              # Écrans (Landing, Home, GroupeDetail, …)
+│   ├── components/         # UI + landing + crypto
+│   ├── lib/                # bitcoin*, whatsappCommands, supabase
+│   └── hooks/              # auth, prix BTC, …
+├── public/
+│   ├── images/hero-3d.png
+│   └── logos/              # kkiapay, bitcoin, whatsapp
+├── supabase/
+│   ├── migrations/         # Schéma PostgreSQL
+│   ├── functions/whatsapp-webhook/
+│   └── seed.sql
+├── scripts/test-whatsapp-webhook.ps1
+├── scripts/test-whatsapp-bot.ps1
+├── scripts/verify-local.ps1
+├── scripts/deploy-cloud.ps1
+└── vite-plugin-whatsapp.ts # Webhook dev uniquement
+```
+
+---
+
+## MCP Cursor (Supabase + GitHub)
+
+Pour que l’agent Cursor puisse appliquer les migrations, déployer les edge functions et gérer le repo :
+
+1. **Token Supabase** : [Dashboard → Account → Access Tokens](https://supabase.com/dashboard/account/tokens) (scope complet sur le projet `slyizcavccnkvxqtmfmd`)
+2. **Token GitHub** : [Settings → Developer settings → PAT](https://github.com/settings/tokens) (scope `repo`)
+3. Copier le modèle et remplacer les placeholders :
+
+```powershell
+copy .cursor\mcp.json.example $env:USERPROFILE\.cursor\mcp.json
+# Éditer %USERPROFILE%\.cursor\mcp.json avec vos tokens
+```
+
+4. **Cursor** → Settings → MCP → vérifier le point vert sur `supabase` et `github`
+5. Recharger la fenêtre (`Ctrl+Shift+P` → *Reload Window*)
+
+Ensuite, demandez à l’agent : *« Applique les migrations Supabase et déploie les edge functions »*.
+
+Déploiement manuel (sans MCP) :
+
+```powershell
+supabase login
+.\scripts\deploy-cloud.ps1
+```
+
+---
+
+## Licence
+
+Projet académique / démonstration — usage selon les conditions du dépôt.

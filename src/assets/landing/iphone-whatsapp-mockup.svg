@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" fill="none">
+  <defs>
+    <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a3a3c"/>
+      <stop offset="50%" stop-color="#1c1c1e"/>
+      <stop offset="100%" stop-color="#2c2c2e"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-10%" width="140%" height="130%">
+      <feDropShadow dx="0" dy="18" stdDeviation="16" flood-color="#0b141a" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <rect x="8" y="8" width="374" height="828" rx="52" fill="url(#frame)"/>
+    <rect x="18" y="18" width="354" height="808" rx="44" fill="#0a0a0a"/>
+    <rect x="26" y="26" width="338" height="792" rx="38" fill="#0b141a"/>
+    <rect x="148" y="38" width="94" height="26" rx="13" fill="#000"/>
+    <rect x="26" y="64" width="338" height="52" fill="#1f2c34"/>
+    <circle cx="56" cy="90" r="14" fill="#25D366"/>
+    <text x="80" y="86" fill="#fff" font-family="system-ui,sans-serif" font-size="12" font-weight="600">TontineChain Bot</text>
+    <text x="80" y="100" fill="#8696a0" font-family="system-ui,sans-serif" font-size="9">en ligne</text>
+    <rect x="44" y="140" width="220" height="52" rx="10" fill="#1f2c34"/>
+    <text x="56" y="162" fill="#ffffffe6" font-family="system-ui,sans-serif" font-size="11">Tapez /aide pour les commandes.</text>
+    <rect x="186" y="204" width="72" height="28" rx="10" fill="#005c4b"/>
+    <text x="222" y="222" text-anchor="middle" fill="#fff" font-size="11" font-family="system-ui">/solde</text>
+    <rect x="44" y="244" width="240" height="64" rx="10" fill="#1f2c34"/>
+    <text x="56" y="266" fill="#ffffffe6" font-family="system-ui,sans-serif" font-size="11" font-weight="600">Votre portefeuille</text>
+    <text x="56" y="286" fill="#ffffffe6" font-family="system-ui,sans-serif" font-size="11">Disponible : 125 000 FCFA</text>
+    <rect x="186" y="322" width="72" height="28" rx="10" fill="#005c4b"/>
+    <text x="222" y="340" text-anchor="middle" fill="#fff" font-size="11" font-family="system-ui">/aide</text>
+    <rect x="44" y="362" width="260" height="48" rx="10" fill="#1f2c34"/>
+    <text x="56" y="390" fill="#ffffffcc" font-family="system-ui,sans-serif" font-size="10">/solde /groupes /cotiser /bitcoin</text>
+    <rect x="44" y="720" width="302" height="40" rx="20" fill="#1f2c34"/>
+    <text x="60" y="745" fill="#8696a0" font-family="system-ui,sans-serif" font-size="11">Message</text>
+  </g>
+</svg>

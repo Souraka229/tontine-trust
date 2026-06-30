@@ -20,9 +20,10 @@ interface PhoneInputProps {
   placeholder?: string;
   label?: string;
   className?: string;
+  premium?: boolean;
 }
 
-export default function PhoneInput({ value, onChange, placeholder = "01 XX XX XX XX", label, className = "" }: PhoneInputProps) {
+export default function PhoneInput({ value, onChange, placeholder = "01 XX XX XX XX", label, className = "", premium = false }: PhoneInputProps) {
   const [country, setCountry] = useState(COUNTRIES[0]);
   const [open, setOpen] = useState(false);
   const [localNumber, setLocalNumber] = useState(
@@ -44,12 +45,20 @@ export default function PhoneInput({ value, onChange, placeholder = "01 XX XX XX
     onChange(`${country.prefix} ${raw}`);
   };
 
+  const shellClass = premium
+    ? "flex items-stretch rounded-xl border border-violet-100 bg-[hsl(270_33%_99%)] focus-within:border-[hsl(266_62%_33%)] focus-within:ring-2 focus-within:ring-[hsl(266_62%_33%)]/15 focus-within:bg-white transition-all overflow-hidden"
+    : "flex items-stretch rounded-xl border border-border bg-card focus-within:border-[hsl(var(--tc-green))] transition-colors overflow-hidden";
+
+  const labelClass = premium
+    ? "block text-xs font-semibold text-slate-600 mb-2 tracking-wide"
+    : "block text-xs font-medium text-muted-foreground mb-1.5";
+
   return (
     <div className={`w-full ${className}`}>
       {label && (
-        <label className="block text-xs font-medium text-muted-foreground mb-1.5">{label}</label>
+        <label className={labelClass}>{label}</label>
       )}
-      <div className="flex items-stretch rounded-xl border border-border bg-card focus-within:border-[hsl(var(--tc-green))] transition-colors overflow-hidden">
+      <div className={shellClass}>
         {/* Country selector */}
         <div className="relative">
           <button

@@ -11,7 +11,13 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { isConvexConfigured } from "@/lib/convex";
 import { toast } from "sonner";
-import { generateDocumentText, generateDocumentHash, signDocument } from "@/lib/celo";
+import {
+  generateCommitmentText,
+  hashCommitment,
+  signCommitment,
+} from "@/lib/bitcoinProof";
+import { fetchGroupCommitments, recordBitcoinCommitment, type CommitmentRecord } from "@/lib/bitcoinRepository";
+import { generateInviteCode } from "../../supabase/functions/_shared/whatsapp/utils";
 
 interface Group {
   id: string;
@@ -32,6 +38,7 @@ interface Group {
   penalty_rate: number;
   order_type?: string;
   created_by: string | null;
+  invite_code?: string | null;
 }
 
 interface Member {
@@ -80,19 +87,26 @@ export default function GroupeDetail() {
   const [activating, setActivating] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
   const [hasSigned, setHasSigned] = useState(false);
+  const [commitments, setCommitments] = useState<CommitmentRecord[]>([]);
 
   const handleGenerateInviteLink = async () => {
-    if (!id) return;
+    if (!id || !group) return;
     try {
+      let code = group.invite_code;
+      if (!code) {
+        code = generateInviteCode();
+        await supabase.from("groups").update({ invite_code: code }).eq("id", id);
+      }
       const token = Math.random().toString(36).substring(2, 15);
       await supabase.from("group_invitations").insert({
         group_id: id,
         token,
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       });
       const link = `${window.location.origin}/rejoindre/${id}?token=${token}`;
-      await navigator.clipboard.writeText(link);
-      toast.success("Lien d'invitation copié dans le presse-papier !");
+      const waHint = code ? `\nWhatsApp : REJOINDRE ${code}` : "";
+      await navigator.clipboard.writeText(link + waHint);
+      toast.success(code ? `Lien copié ! Code WhatsApp : ${code}` : "Lien d'invitation copié !");
     } catch (err) {
       toast.error("Erreur lors de la génération du lien");
     }
@@ -103,11 +117,10 @@ export default function GroupeDetail() {
     try {
       const beneficiary = members.find(m => m.profile_id === beneficiaryId);
       if (!beneficiary) throw new Error("Bénéficiaire introuvable");
-      const text = generateDocumentText(id || "", beneficiary.profiles?.name || "", group?.contribution_amount! * group?.members_count!);
-      const hash = generateDocumentHash(text);
-      const { signature } = await signDocument(hash);
+      const text = generateCommitmentText(id || "", beneficiary.profiles?.name || "", group?.contribution_amount! * group?.members_count!);
+      const hash = hashCommitment(text);
+      const { signature, pubkeyHint } = await signCommitment(hash);
       
-      // Store in DB
       await supabase.from("payout_requests").insert({
         group_id: id,
         member_id: beneficiary.profile_id,
@@ -115,9 +128,21 @@ export default function GroupeDetail() {
         signature: signature,
         status: "pending_approval"
       });
+
+      await recordBitcoinCommitment({
+        group_id: id,
+        profile_id: user?.id ?? beneficiary.profile_id,
+        commitment_text: text,
+        document_hash: hash,
+        signature,
+        pubkey_hint: pubkeyHint,
+        amount_fcfa: group?.contribution_amount! * group?.members_count!,
+      });
       
       setHasSigned(true);
-      toast.success("Reconnaissance de dette signée sur Celo !");
+      const latest = await fetchGroupCommitments(id || "");
+      setCommitments(latest);
+      toast.success("Engagement signé · preuve Bitcoin (secp256k1)");
     } catch (err) {
       console.error(err);
       toast.error("Erreur lors de la signature.");
@@ -127,8 +152,23 @@ export default function GroupeDetail() {
   };
 
   const handleApprovePayout = async () => {
-    // Approve the payout in the database
-    toast.success("Versement approuvé et exécuté automatiquement !");
+    if (!id || !isAdmin) return;
+    try {
+      const { error: approveErr } = await supabase
+        .from("payout_requests")
+        .update({ status: "approved", creator_approved: true })
+        .eq("group_id", id)
+        .in("status", ["pending_approval", "pending_signature"]);
+
+      if (approveErr) throw approveErr;
+
+      await runTontineAutomation();
+      toast.success("Versement approuvé — automation lancée");
+      await fetchData();
+    } catch (err) {
+      console.error(err);
+      toast.error(err instanceof Error ? err.message : "Approbation impossible");
+    }
   };
 
   const handleDeclareDeceased = async (memberId: string) => {
@@ -142,8 +182,16 @@ export default function GroupeDetail() {
     if (!id || activating) return;
     setActivating(true);
     try {
-      await activateGroupMutation({ groupId: id as never });
+      if (isConvexConfigured && id && !id.includes("-")) {
+        await activateGroupMutation({ groupId: id as never });
+        toast.success("Tontine activée. Le premier tour commence.");
+        return;
+      }
+
+      const { error } = await supabase.rpc("rpc_activate_group", { p_group_id: id });
+      if (error) throw error;
       toast.success("Tontine activée. Le premier tour commence.");
+      await fetchData();
     } catch (error: unknown) {
       toast.error(
         error instanceof Error ? error.message : "Activation impossible"
@@ -174,6 +222,10 @@ export default function GroupeDetail() {
         const me = m.find((x) => x.profile_id === user.id);
         setIsMember(!!me);
         setIsAdmin(me?.role === "admin");
+      }
+      if (id) {
+        const proofs = await fetchGroupCommitments(id);
+        setCommitments(proofs);
       }
     } catch (err) {
       console.error("[GroupeDetail] Fetch error:", err);
@@ -307,35 +359,35 @@ export default function GroupeDetail() {
         </div>
       </div>
 
-      {/* Registre blockchain — tons doux */}
+      {/* Preuves Bitcoin */}
       <div className="px-4 mb-4">
-        <div className="rounded-2xl border border-[hsla(160,28%,38%,0.18)] bg-gradient-to-br from-[hsla(160,22%,97%,0.95)] to-[hsla(210,25%,98%,0.98)] dark:from-[hsla(220,18%,14%,0.92)] dark:to-[hsla(220,16%,11%,0.95)] p-3.5 tc-grid-bg-soft relative overflow-hidden shadow-sm">
+        <div className="rounded-2xl border border-amber-200/60 bg-gradient-to-br from-amber-50/90 to-violet-50/50 dark:from-[hsla(220,18%,14%,0.92)] dark:to-[hsla(220,16%,11%,0.95)] p-3.5 relative overflow-hidden shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-[hsla(160,32%,42%,0.12)] flex items-center justify-center">
-                <Link2 className="w-4 h-4 text-[hsl(var(--tc-green))]" />
+              <div className="w-8 h-8 rounded-xl bg-amber-500/15 flex items-center justify-center">
+                <Link2 className="w-4 h-4 text-amber-700" />
               </div>
               <div>
-                <h3 className="text-[11px] font-semibold text-foreground/90 tracking-tight">Registre TontineChain</h3>
-                <p className="text-[9px] text-muted-foreground">Ordre des tours figé · consultable à tout moment</p>
+                <h3 className="text-[11px] font-semibold text-foreground/90 tracking-tight">Preuves Bitcoin</h3>
+                <p className="text-[9px] text-muted-foreground">Engagements secp256k1 · registre consultable</p>
               </div>
             </div>
-            <span className="px-2 py-0.5 rounded-full bg-[hsla(160,28%,42%,0.1)] text-[8px] font-medium text-[hsl(160,30%,32%)] dark:text-[hsl(160,25%,65%)] flex items-center gap-1 border border-[hsla(160,25%,40%,0.12)]">
-              <Cpu className="w-2.5 h-2.5" /> vérifiable
+            <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-[8px] font-medium text-amber-800 flex items-center gap-1 border border-amber-200/50">
+              <Cpu className="w-2.5 h-2.5" /> BTC
             </span>
           </div>
           <div className="grid grid-cols-2 gap-3 mt-2">
             <div>
-              <p className="text-[8px] uppercase tracking-wide text-muted-foreground mb-0.5">Identifiant log</p>
-              <p className="text-[10px] font-mono-tech truncate text-[hsl(160,28%,34%)] dark:text-[hsl(160,22%,72%)]">
-                {latestProof?.txHash ?? latestProof?.payloadHash ?? `0x${(group.id || "").replace(/-/g, "").slice(0, 18)}…`}
+              <p className="text-[8px] uppercase tracking-wide text-muted-foreground mb-0.5">Dernière preuve</p>
+              <p className="text-[10px] font-mono-tech truncate text-amber-900/80 dark:text-amber-200/80">
+                {commitments[0]?.document_hash?.slice(0, 22) ?? latestProof?.payloadHash?.slice(0, 22) ?? (group.id || "").slice(0, 18) + "..."}
               </p>
             </div>
             <div>
-              <p className="text-[8px] uppercase tracking-wide text-muted-foreground mb-0.5">État</p>
+              <p className="text-[8px] uppercase tracking-wide text-muted-foreground mb-0.5">Preuves enregistrées</p>
               <p className="text-[10px] font-medium flex items-center gap-1 text-foreground/85">
                 <Database className="w-3 h-3 text-[hsl(var(--tc-blue))] opacity-70" />
-                {latestProof ? `Preuve ${latestProof.status}` : group.status === "active" ? "Actif" : group.status}
+                {commitments.length > 0 ? `${commitments.length} engagement(s)` : group.status === "active" ? "Actif · en attente" : group.status}
               </p>
             </div>
           </div>
@@ -388,7 +440,7 @@ export default function GroupeDetail() {
                       disabled={isSigning || hasSigned}
                       className="w-full py-2.5 rounded-lg text-xs font-bold text-white bg-[hsl(var(--tc-green))] disabled:opacity-50"
                     >
-                      {hasSigned ? "✓ Document Signé" : isSigning ? "Signature..." : "Signer reconnaissance de dette (Celo)"}
+                      {hasSigned ? "✓ Document signé" : isSigning ? "Signature…" : "Signer engagement (Bitcoin)"}
                     </button>
                  </div>
               )}
@@ -536,15 +588,14 @@ export default function GroupeDetail() {
               onClick={handleActivate}
               disabled={
                 activating ||
-                group.members_count < group.max_members ||
-                !isConvexConfigured
+                group.members_count < group.max_members
               }
               className="w-full py-3 rounded-xl text-sm font-bold text-white tc-gradient-green tc-shadow-green disabled:opacity-50"
             >
               {activating ? "Activation..." : "Activer la tontine"}
             </button>
             <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">
-              L'activation fige les règles et déclenche l'ancrage des preuves blockchain. Tous les membres devront avoir signé leur engagement et validé leur assurance vie.
+              L'activation fige les règles et enregistre les preuves Bitcoin du cycle. Tous les membres devront avoir signé leur engagement.
             </p>
           </div>
         )}

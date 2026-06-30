@@ -4,6 +4,7 @@ import TopBar from "@/components/layout/TopBar";
 import ProgressBar from "@/components/ui/ProgressBar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
+import { generateInviteCode } from "../../supabase/functions/_shared/whatsapp/utils";
 import { toast } from "sonner";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -133,6 +134,7 @@ export default function CreerGroupe() {
           min_score: parseInt(form.minScore, 10) || 0,
           status: "pending",
           created_by: user.id,
+          invite_code: generateInviteCode(),
         })
         .select()
         .single();

@@ -1,4 +1,4 @@
-vsexport interface TontineGroup {
+export interface TontineGroup {
   id: string;
   name: string;
   initials: string;
@@ -53,7 +53,7 @@ export const currentUser = {
   name: "Ama Kossou",
   initials: "AK",
   phone: "+229 01 02 03 04 05",
-  did: "did:celo:0x4b2e...d91a",
+  did: "bitcoin:bc1q…treasury",
   score: 784,
   maxScore: 1000,
   groupsCount: 3,

@@ -7,7 +7,7 @@ const KKIAPAY_SECRET = import.meta.env.VITE_KKIAPAY_SECRET;
 
 /** Démo : crédit / débit immédiat côté DB (triggers). Mettre VITE_DEMO_PAYMENTS=false en prod avec webhooks réels. */
 function isImmediateDemoSettlement(): boolean {
-  return import.meta.env.VITE_KKIAPAY_SANDBOX === "true";
+  return import.meta.env.VITE_DEMO_PAYMENTS !== "false";
 }
 
 export interface PaymentPayload {

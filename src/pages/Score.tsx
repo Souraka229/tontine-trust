@@ -1,13 +1,7 @@
 import TopBar from "@/components/layout/TopBar";
 import ProgressBar from "@/components/ui/ProgressBar";
 import { useAuth } from "@/hooks/useAuth";
-
-const scoreBreakdown = [
-  { label: "Ponctualité", key: "score", weight: 40, color: "green" as const },
-  { label: "Participation", key: "groups_count", weight: 25, color: "blue" as const },
-  { label: "Ancienneté", key: "cycles_completed", weight: 20, color: "purple" as const },
-  { label: "Fiabilité", key: "score", weight: 15, color: "amber" as const },
-];
+import { computeScoreBreakdown } from "@/lib/scoreBreakdown";
 
 function getLabel(score: number) {
   if (score >= 800) return "Excellent";
@@ -21,6 +15,12 @@ export default function Score() {
   const score = profile?.score ?? 0;
   const maxScore = profile?.max_score ?? 1000;
   const scorePercent = (score / maxScore) * 100;
+  const scoreBreakdown = computeScoreBreakdown({
+    score,
+    max_score: maxScore,
+    groups_count: profile?.groups_count,
+    cycles_completed: profile?.cycles_completed,
+  });
 
   return (
     <div className="animate-fade-in">
@@ -57,7 +57,7 @@ export default function Score() {
                 <span className="font-semibold">{s.label}</span>
                 <span className="text-muted-foreground">poids {s.weight}%</span>
               </div>
-              <ProgressBar value={scorePercent} color={s.color} />
+              <ProgressBar value={s.value} color={s.color} />
             </div>
           ))}
         </div>

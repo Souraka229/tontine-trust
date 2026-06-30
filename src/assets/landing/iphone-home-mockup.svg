@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" fill="none">
+  <defs>
+    <linearGradient id="hero" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2d6a5a"/>
+      <stop offset="100%" stop-color="#3d7a6a"/>
+    </linearGradient>
+    <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a3a3c"/>
+      <stop offset="50%" stop-color="#1c1c1e"/>
+      <stop offset="100%" stop-color="#2c2c2e"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-10%" width="140%" height="130%">
+      <feDropShadow dx="0" dy="18" stdDeviation="16" flood-color="#40196D" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <rect x="8" y="8" width="374" height="828" rx="52" fill="url(#frame)"/>
+    <rect x="18" y="18" width="354" height="808" rx="44" fill="#0a0a0a"/>
+    <rect x="26" y="26" width="338" height="792" rx="38" fill="#fff"/>
+    <rect x="148" y="38" width="94" height="26" rx="13" fill="#000"/>
+    <rect x="26" y="64" width="338" height="200" fill="url(#hero)"/>
+    <text x="195" y="92" text-anchor="middle" fill="#ffffffb3" font-family="system-ui,sans-serif" font-size="11">Mes soldes</text>
+    <rect x="48" y="104" width="294" height="88" rx="16" fill="#ffffff1f" stroke="#ffffff33"/>
+    <text x="195" y="128" text-anchor="middle" fill="#ffffffbf" font-family="system-ui,sans-serif" font-size="9" letter-spacing="1">SOLDE DISPONIBLE</text>
+    <text x="195" y="162" text-anchor="middle" fill="#fff" font-family="system-ui,sans-serif" font-size="28" font-weight="700">125 000</text>
+    <text x="195" y="180" text-anchor="middle" fill="#ffffff8c" font-family="system-ui,sans-serif" font-size="9">FCFA - TontineChain</text>
+    <rect x="48" y="202" width="90" height="28" rx="10" fill="#ffffff26"/>
+    <rect x="148" y="202" width="90" height="28" rx="10" fill="#ffffff26"/>
+    <rect x="248" y="202" width="90" height="28" rx="10" fill="#ffffff26"/>
+    <text x="93" y="220" text-anchor="middle" fill="#fff" font-size="9" font-family="system-ui">Cotiser</text>
+    <text x="193" y="220" text-anchor="middle" fill="#fff" font-size="9" font-family="system-ui">Rejoindre</text>
+    <text x="293" y="220" text-anchor="middle" fill="#fff" font-size="9" font-family="system-ui">Creer</text>
+    <text x="44" y="290" fill="#40196D" font-family="system-ui,sans-serif" font-size="13" font-weight="600">Mes groupes</text>
+    <rect x="44" y="302" width="302" height="72" rx="14" fill="#fff" stroke="#e8e0f0"/>
+    <circle cx="68" cy="338" r="16" fill="#40196D"/>
+    <text x="68" y="342" text-anchor="middle" fill="#fff" font-size="10" font-weight="700" font-family="system-ui">TK</text>
+    <text x="94" y="332" fill="#1e1e2e" font-size="12" font-weight="600" font-family="system-ui">Tontine Kpakpatos</text>
+    <text x="94" y="350" fill="#6b7280" font-size="10" font-family="system-ui">Tour 3/8 - 50 000 FCFA</text>
+    <rect x="94" y="356" width="180" height="6" rx="3" fill="#ede9fe"/>
+    <rect x="94" y="356" width="68" height="6" rx="3" fill="#40196D"/>
+    <rect x="26" y="748" width="338" height="70" fill="#fff" stroke="#e8e0f0"/>
+    <text x="62" y="786" text-anchor="middle" fill="#40196D" font-size="8" font-family="system-ui">Accueil</text>
+    <text x="130" y="786" text-anchor="middle" fill="#9ca3af" font-size="8" font-family="system-ui">Portefeuille</text>
+    <text x="195" y="786" text-anchor="middle" fill="#9ca3af" font-size="8" font-family="system-ui">Groupes</text>
+    <text x="260" y="786" text-anchor="middle" fill="#9ca3af" font-size="8" font-family="system-ui">Cotiser</text>
+    <text x="325" y="786" text-anchor="middle" fill="#9ca3af" font-size="8" font-family="system-ui">Profil</text>
+  </g>
+</svg>

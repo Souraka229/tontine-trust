@@ -197,7 +197,7 @@ export default function Home() {
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <p className="text-sm font-semibold truncate">{g.name}</p>
                         <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-[hsla(160,40%,42%,0.12)] text-[8px] font-semibold text-[hsl(var(--tc-green))] uppercase tracking-tight shrink-0">
-                          <ShieldCheck className="w-2 h-2" /> On-chain
+                          <ShieldCheck className="w-2 h-2" /> Traçable
                         </span>
                       </div>
                       <p className="text-[11px] text-muted-foreground">
@@ -234,7 +234,7 @@ export default function Home() {
               { emoji: "🤝", title: "Tontine solidaire", desc: "Tous cotisent, chacun reçoit à son tour la cagnotte cumulée." },
               { emoji: "⚡", title: "Versement automatique", desc: "Dès que tout le monde a payé, les fonds sont versés sans intervention." },
               { emoji: "🔒", title: "Retard = compte suspendu", desc: "Pas de cotisation à l'échéance ? Votre portefeuille est bloqué jusqu'à régularisation." },
-              { emoji: "🛡️", title: "Smart Contract on-chain", desc: "Chaque groupe a un identifiant immuable. Les règles sont encodées et vérifiables." },
+              { emoji: "🛡️", title: "Preuves secp256k1", desc: "Engagements signés par groupe. Registre partagé Supabase vérifiable par tous les membres." },
             ].map((item) => (
               <div key={item.title} className="flex gap-3 items-start">
                 <span className="text-base mt-0.5">{item.emoji}</span>

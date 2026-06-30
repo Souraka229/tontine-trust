@@ -9,6 +9,7 @@ lerna-debug.log*
 
 node_modules
 dist
+.flashbot-temp
 dist-ssr
 *.local
 
@@ -25,12 +26,13 @@ dist-ssr
 
 # Environment variables
 .env
-.env.example
 .env.local
+# .env.example est versionné (modèle sans secrets)
 
 # Cursor / agents
 .agents/
-.cursor/
+.cursor/*
+!.cursor/mcp.json.example
 AGENTS.md
 CLAUDE.md
 skills-lock.json

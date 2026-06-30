@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import TopBar from "@/components/layout/TopBar";
 import { Check, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,6 +30,9 @@ type PayStep = "form" | "confirm" | "processing" | "done" | "error";
 
 export default function Cotiser() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const groupIdFromUrl = searchParams.get("group");
+  const appliedGroupFromUrl = useRef(false);
   const { user, profile, refreshProfile } = useAuth();
   const [operator, setOperator] = useState("mtn");
   const [phone, setPhone] = useState(profile?.phone || "");
@@ -57,8 +60,9 @@ export default function Cotiser() {
           contribution_amount: group.contributionAmount,
         }));
       setGroups(activeGroups);
-      if (!selectedGroup && activeGroups.length > 0) {
-        setSelectedGroup(activeGroups[0]);
+      if (activeGroups.length > 0) {
+        const fromUrl = groupIdFromUrl && activeGroups.find((g) => g.id === groupIdFromUrl);
+        setSelectedGroup(fromUrl ?? activeGroups[0]);
       }
       return;
     }
@@ -112,17 +116,22 @@ export default function Cotiser() {
         }
         
         console.log("Active groups:", groups);
-        setGroups(groups || []);
-        if (groups && groups.length > 0) {
-          console.log("Setting selected group to first group:", groups[0]);
-          setSelectedGroup(groups[0]);
+        const list = groups || [];
+        setGroups(list);
+        if (list.length > 0) {
+          const fromUrl = groupIdFromUrl && list.find((g) => g.id === groupIdFromUrl);
+          setSelectedGroup(fromUrl ?? list[0]);
+          if (fromUrl && !appliedGroupFromUrl.current) {
+            appliedGroupFromUrl.current = true;
+            toast.info(`Groupe « ${fromUrl.name} » sélectionné`);
+          }
         }
       })
       .catch(error => {
         console.error("Unexpected error loading groups:", error);
         setGroups([]);
       });
-  }, [convexGroups, selectedGroup, user]);
+  }, [convexGroups, groupIdFromUrl, user]);
 
   useEffect(() => { if (profile?.phone) setPhone(profile.phone); }, [profile]);
 

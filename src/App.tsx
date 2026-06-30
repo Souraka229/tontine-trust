@@ -6,9 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ConvexSupabaseProvider } from "@/components/providers/ConvexSupabaseProvider";
-import { ConvexUserSync } from "@/components/providers/ConvexUserSync";
 import AppLayout from "@/components/layout/AppLayout";
 
+import Landing from "./pages/Landing";
 import Splash from "./pages/Splash";
 import Connexion from "./pages/Connexion";
 import Inscription from "./pages/Inscription";
@@ -27,9 +27,19 @@ import Parametres from "./pages/Parametres";
 import Admin from "./pages/Admin";
 import Portefeuille from "./pages/Portefeuille";
 import TestKkiapay from "./pages/TestKkiapay";
+import CryptoLiquidity from "./pages/CryptoLiquidity";
+import WhatsAppBot from "./pages/WhatsAppBot";
 import NotFound from "./pages/NotFound";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -46,18 +56,21 @@ function GuestRoute({ children }: { children: React.ReactNode }) {
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <AuthProvider>
-        <ConvexSupabaseProvider>
-          <TooltipProvider>
-            <ConvexUserSync />
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route element={<AppLayout />}>
-                  <Route path="/" element={<Splash />} />
+  <ErrorBoundary title="TontineChain a rencontré un problème">
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <AuthProvider>
+          <ConvexSupabaseProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route element={<AppLayout />}>
+                  <Route path="/" element={<Landing />} />
+                  <Route path="/whatsapp" element={<WhatsAppBot />} />
+                  <Route path="/crypto" element={<CryptoLiquidity />} />
+                  <Route path="/welcome" element={<Splash />} />
                   <Route path="/connexion" element={<GuestRoute><Connexion /></GuestRoute>} />
                   <Route path="/inscription" element={<GuestRoute><Inscription /></GuestRoute>} />
                   <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
@@ -77,13 +90,14 @@ const App = () => (
                   <Route path="/test-kkiapay" element={<ProtectedRoute><TestKkiapay /></ProtectedRoute>} />
                   <Route path="*" element={<NotFound />} />
                 </Route>
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </ConvexSupabaseProvider>
-      </AuthProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </ConvexSupabaseProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

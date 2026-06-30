@@ -121,6 +121,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const bootstrap = async () => {
+      const timeout = window.setTimeout(() => {
+        if (!cancelled) {
+          console.warn("[AuthProvider] getSession timeout — mode invité");
+          safeSetLoading(false);
+        }
+      }, 8_000);
+
       try {
         const { data, error } = await supabase.auth.getSession();
         if (cancelled) return;
@@ -134,6 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setProfile(null);
         }
       } finally {
+        window.clearTimeout(timeout);
         safeSetLoading(false);
       }
     };

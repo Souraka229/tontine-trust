@@ -1,10 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import TopBar from "@/components/layout/TopBar";
+import { User, Mail, Lock, ArrowRight, MailCheck } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { toast } from "sonner";
 import PhoneInput from "@/components/ui/PhoneInput";
 import { saveDemoAccount } from "@/lib/demoMultiAccount";
+import AuthLayout, {
+  AuthField,
+  authInputClass,
+  AuthSubmitButton,
+  SupabaseAlert,
+  AuthTrustBadges,
+} from "@/components/auth/AuthLayout";
 
 export default function Inscription() {
   const navigate = useNavigate();
@@ -35,20 +42,18 @@ export default function Inscription() {
         email: normalizedEmail,
         password,
         options: {
-          data: { name: normalizedName, phone: normalizedPhone }
-        }
+          data: { name: normalizedName, phone: normalizedPhone },
+        },
       });
-      
+
       if (error) throw error;
 
-      // Supabase returns success but empty identities if the user already exists (to prevent email enumeration)
       if (data.user && data.user.identities && data.user.identities.length === 0) {
         toast.error("Un compte existe déjà avec cette adresse email. Allez à la connexion.");
         setLoading(false);
         return;
       }
 
-      // Confirmation email désactivée dans Supabase → session immédiate
       if (data.session) {
         if (memoDemo) {
           saveDemoAccount(normalizedEmail, password, normalizedName);
@@ -72,104 +77,116 @@ export default function Inscription() {
     }
   };
 
+  const canSubmit = password.length >= 6 && !!email && !!name && !!phone.trim();
+
   return (
-    <div className="flex flex-col min-h-screen animate-slide-up">
-      <TopBar
-        title="Créer un compte"
-        backTo="/"
-        backLabel="Retour"
-        rightElement={<span className="text-xs text-[hsl(var(--tc-green))] font-semibold">Profil</span>}
-      />
-      <div className="px-4 pt-2">
-        {!isSupabaseConfigured && (
-          <div
-            role="alert"
-            className="mb-4 rounded-xl border border-[hsla(0,84%,60%,0.35)] bg-[hsla(0,84%,60%,0.08)] px-3 py-2.5 text-[11px] text-foreground leading-relaxed"
-          >
-            <strong className="font-semibold">Configuration requise.</strong> Fichier{" "}
-            <code className="rounded bg-muted px-1 py-0.5 text-[10px]">.env</code> avec{" "}
-            <code className="rounded bg-muted px-1 py-0.5 text-[10px]">VITE_SUPABASE_URL</code> et{" "}
-            <code className="rounded bg-muted px-1 py-0.5 text-[10px]">VITE_SUPABASE_ANON_KEY</code>, puis redémarrage du serveur de dev.
-          </div>
-        )}
-        {!isSuccess ? (
-          <div className="animate-slide-up">
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Nom complet</label>
+    <AuthLayout
+      title="Créer un compte"
+      subtitle="Rejoignez TontineChain en quelques secondes. Votre portefeuille FCFA sera prêt immédiatement."
+      footer={
+        !isSuccess ? (
+          <p className="text-sm text-slate-500">
+            Déjà membre ?{" "}
+            <button
+              type="button"
+              onClick={() => navigate("/connexion")}
+              className="font-semibold text-[hsl(266_62%_33%)] hover:underline"
+            >
+              Se connecter
+            </button>
+          </p>
+        ) : undefined
+      }
+    >
+      {!isSupabaseConfigured && <SupabaseAlert />}
+
+      {!isSuccess ? (
+        <>
+          <AuthField label="Nom complet" icon={User}>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ama Kossou"
-              className="w-full px-3 py-2.5 rounded-xl border border-border bg-card text-sm outline-none focus:border-[hsl(var(--tc-green))] transition-colors mb-4"
+              autoComplete="name"
+              className={authInputClass(true)}
             />
-            
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Adresse Email</label>
-            <div className="flex gap-2 mb-4">
-              <input
-                type="email"
-                value={email}
+          </AuthField>
+
+          <AuthField label="Adresse email" icon={Mail}>
+            <input
+              type="email"
+              value={email}
               onChange={(e) => setEmail(e.target.value.trim().toLowerCase())}
-                placeholder="ama.kossou@email.com"
-                className="flex-1 px-3 py-2.5 rounded-xl border border-border bg-card text-sm outline-none focus:border-[hsl(var(--tc-green))] transition-colors"
-              />
-            </div>
-
-            <PhoneInput 
-              label="Numéro de téléphone"
-              value={phone}
-              onChange={setPhone}
-              className="mb-4"
+              placeholder="ama.kossou@email.com"
+              autoComplete="email"
+              className={authInputClass(true)}
             />
+          </AuthField>
 
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Mot de passe</label>
-            <div className="flex gap-2 mb-6">
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Votre mot de passe"
-                className="flex-1 px-3 py-2.5 rounded-xl border border-border bg-card text-sm outline-none focus:border-[hsl(var(--tc-green))] transition-colors"
-              />
-            </div>
+          <PhoneInput
+            label="Numéro de téléphone"
+            value={phone}
+            onChange={setPhone}
+            premium
+            className="mb-5"
+          />
 
-            <label className="flex items-start gap-2 cursor-pointer mt-2">
-              <input
-                type="checkbox"
-                checked={memoDemo}
-                onChange={(e) => setMemoDemo(e.target.checked)}
-                className="w-4 h-4 mt-0.5 rounded border-border text-[hsl(var(--tc-green))]"
-              />
-              <span className="text-[11px] text-muted-foreground leading-snug">
-                <span className="font-medium text-foreground/85">Enregistrer sur cet appareil (démo)</span> — pour changer de compte rapidement après déconnexion. Stockage local non sécurisé.
-              </span>
-            </label>
+          <AuthField label="Mot de passe" icon={Lock}>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Minimum 6 caractères"
+              autoComplete="new-password"
+              className={authInputClass(true)}
+            />
+          </AuthField>
 
-            <button 
-              onClick={handleSignUp} 
-              disabled={loading || password.length < 6 || !email || !name}
-              className="w-full py-3 rounded-xl text-sm font-semibold text-white tc-gradient-green tc-shadow-green disabled:opacity-50 mt-4"
-            >
-              {loading ? "Création en cours..." : "S'inscrire →"}
-            </button>
+          {password.length > 0 && password.length < 6 && (
+            <p className="text-[10px] text-amber-600 -mt-3 mb-4">Encore {6 - password.length} caractère(s) requis</p>
+          )}
+
+          <label className="flex items-start gap-3 cursor-pointer p-3 rounded-xl bg-violet-50/60 border border-violet-100/80 mb-2">
+            <input
+              type="checkbox"
+              checked={memoDemo}
+              onChange={(e) => setMemoDemo(e.target.checked)}
+              className="w-4 h-4 mt-0.5 rounded border-violet-200 text-[hsl(266_62%_33%)] accent-[hsl(266_62%_33%)]"
+            />
+            <span className="text-[11px] text-slate-600 leading-relaxed">
+              <span className="font-semibold text-slate-800">Mémoriser sur cet appareil (démo)</span>
+              <br />
+              Reconnexion rapide pour la présentation. Stockage local non sécurisé.
+            </span>
+          </label>
+
+          <AuthSubmitButton loading={loading} disabled={!canSubmit} onClick={handleSignUp}>
+            <span className="inline-flex items-center justify-center gap-2">
+              Créer mon compte <ArrowRight className="w-4 h-4" />
+            </span>
+          </AuthSubmitButton>
+
+          <AuthTrustBadges />
+        </>
+      ) : (
+        <div className="text-center py-4">
+          <div className="w-16 h-16 rounded-2xl bg-violet-100 flex items-center justify-center mx-auto mb-5 animate-check-bounce">
+            <MailCheck className="w-8 h-8 text-[hsl(266_62%_33%)]" />
           </div>
-        ) : (
-          <div className="animate-slide-up text-center mt-12">
-            <div className="w-20 h-20 rounded-full bg-[hsl(var(--tc-green))] flex items-center justify-center mx-auto mb-6 tc-shadow-green animate-check-bounce">
-              <span className="text-white text-4xl">📧</span>
-            </div>
-            <h2 className="text-xl font-bold mb-2">Vérifiez vos emails</h2>
-            <p className="text-sm text-muted-foreground mb-8">
-              Un lien magique a été envoyé à <span className="font-semibold">{email}</span>. <br />
-              Cliquez sur le lien pour vérifier votre compte et vous connecter automatiquement.
-            </p>
-            <button 
-              onClick={() => navigate("/connexion")} 
-              className="text-sm font-medium text-[hsl(var(--tc-green))]"
-            >
-              Aller à la connexion →
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+          <h3 className="text-lg font-bold text-slate-900 mb-2">Vérifiez vos emails</h3>
+          <p className="text-sm text-slate-500 leading-relaxed mb-6">
+            Un lien de confirmation a été envoyé à{" "}
+            <span className="font-semibold text-slate-800">{email}</span>.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate("/connexion")}
+            className="text-sm font-semibold text-[hsl(266_62%_33%)] hover:underline inline-flex items-center gap-1"
+          >
+            Aller à la connexion <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+    </AuthLayout>
   );
 }

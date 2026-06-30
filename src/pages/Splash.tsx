@@ -17,10 +17,10 @@ export default function Splash() {
         <Shield className="w-10 h-10 text-white" />
       </div>
       <h1 className="text-2xl font-bold mb-1">TontineChain</h1>
-      <p className="text-sm text-muted-foreground mb-2">La tontine, réinventée sur blockchain</p>
+      <p className="text-sm text-muted-foreground mb-2">Tontine digitale · Bitcoin · Mobile Money</p>
       <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mb-12">
         <div className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--tc-green))] animate-pulse" />
-        Sécurisé par Celo Blockchain
+        Sécurisé par Bitcoin
       </div>
       <div className="w-full max-w-xs flex flex-col gap-3">
         <button

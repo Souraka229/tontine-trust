@@ -1,10 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import TopBar from "@/components/layout/TopBar";
+import { Mail, Lock, ArrowRight, Users, X } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { toast } from "sonner";
-import { Users, X } from "lucide-react";
 import { getDemoAccounts, removeDemoAccount, saveDemoAccount, type DemoAccountRecord } from "@/lib/demoMultiAccount";
+import AuthLayout, {
+  AuthField,
+  authInputClass,
+  AuthSubmitButton,
+  SupabaseAlert,
+  AuthTrustBadges,
+} from "@/components/auth/AuthLayout";
 
 export default function Connexion() {
   const navigate = useNavigate();
@@ -44,7 +50,7 @@ export default function Connexion() {
 
   const handleLogin = async () => {
     if (!isSupabaseConfigured) {
-      toast.error("Configuration Supabase manquante. Vérifiez le fichier .env (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY).");
+      toast.error("Configuration Supabase manquante. Vérifiez le fichier .env.");
       return;
     }
     if (password.length < 6 || !email) {
@@ -54,11 +60,7 @@ export default function Connexion() {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       finishLogin(email, password);
     } catch (error: unknown) {
@@ -71,7 +73,7 @@ export default function Connexion() {
 
   const handleQuickLogin = async (acc: DemoAccountRecord) => {
     if (!isSupabaseConfigured) {
-      toast.error("Configuration Supabase manquante. Ajoutez les clés dans .env à la racine du projet.");
+      toast.error("Configuration Supabase manquante.");
       return;
     }
     setLoading(true);
@@ -101,132 +103,118 @@ export default function Connexion() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen animate-slide-up">
-      <TopBar title="Connexion" backTo="/" backLabel="Retour" />
-      <div className="flex-1 px-4 pt-4 pb-8">
-        {!isSupabaseConfigured && (
-          <div
-            role="alert"
-            className="mb-4 rounded-xl border border-[hsla(0,84%,60%,0.35)] bg-[hsla(0,84%,60%,0.08)] px-3 py-2.5 text-[11px] text-foreground leading-relaxed"
+    <AuthLayout
+      title="Bon retour !"
+      subtitle="Connectez-vous pour accéder à vos groupes, votre portefeuille FCFA et le trésor Bitcoin."
+      footer={
+        <p className="text-sm text-slate-500">
+          Pas encore de compte ?{" "}
+          <button
+            type="button"
+            onClick={() => navigate("/inscription")}
+            className="font-semibold text-[hsl(266_62%_33%)] hover:underline"
           >
-            <strong className="font-semibold">Configuration requise.</strong> Créez un fichier{" "}
-            <code className="rounded bg-muted px-1 py-0.5 text-[10px]">.env</code> à la racine avec{" "}
-            <code className="rounded bg-muted px-1 py-0.5 text-[10px]">VITE_SUPABASE_URL</code> et{" "}
-            <code className="rounded bg-muted px-1 py-0.5 text-[10px]">VITE_SUPABASE_ANON_KEY</code>, puis
-            redémarrez <code className="rounded bg-muted px-1 py-0.5 text-[10px]">npm run dev</code>.
-          </div>
-        )}
-        <div className="text-center mb-6">
-          <div className="w-14 h-14 rounded-2xl tc-gradient-green flex items-center justify-center mx-auto mb-4 tc-shadow-green">
-            <span className="text-white text-xl">🔐</span>
-          </div>
-          <h2 className="text-lg font-bold">Bon retour !</h2>
-          <p className="text-xs text-muted-foreground mt-1">Connectez-vous avec votre adresse email</p>
-        </div>
-
-        {savedAccounts.length > 0 && (
-          <div className="mb-6 rounded-2xl border border-[hsla(160,35%,42%,0.2)] bg-[hsla(160,22%,96%,0.5)] dark:bg-[hsla(160,12%,14%,0.4)] p-3">
-            <div className="flex items-center gap-2 mb-2">
-              <Users className="w-4 h-4 text-[hsl(var(--tc-green))]" />
-              <p className="text-xs font-semibold text-foreground/90">Comptes sur cet appareil (démo)</p>
-            </div>
-            <p className="text-[10px] text-muted-foreground mb-2 leading-relaxed">
-              Connexion en un toucher pour la présentation. Les mots de passe sont stockés localement, en clair — ne pas utiliser avec de vraies données sensibles.
-            </p>
-            <ul className="flex flex-col gap-2">
-              {savedAccounts.map((acc) => (
-                <li
-                  key={acc.email}
-                  className="flex items-center gap-2 rounded-xl bg-card border border-border/80 px-2 py-2"
-                >
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() => handleQuickLogin(acc)}
-                    className="flex-1 text-left min-w-0 disabled:opacity-50"
-                  >
-                    <p className="text-xs font-semibold truncate">{acc.label}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">{acc.email}</p>
-                  </button>
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={(e) => handleRemoveSaved(e, acc.email)}
-                    className="p-1.5 rounded-lg text-muted-foreground hover:text-[hsl(var(--tc-red))] hover:bg-[hsla(0,84%,60%,0.08)]"
-                    aria-label={`Retirer ${acc.email}`}
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <label className="block text-xs font-medium text-muted-foreground mb-1.5">Adresse Email</label>
-        <div className="flex gap-2 mb-4">
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="ama.kossou@email.com"
-            className="flex-1 px-3 py-2.5 rounded-xl border border-border bg-card text-sm outline-none focus:border-[hsl(var(--tc-green))] transition-colors"
-            autoComplete="username"
-          />
-        </div>
-
-        <label className="block text-xs font-medium text-muted-foreground mb-1.5">Mot de passe</label>
-        <div className="flex gap-2 mb-4">
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Votre mot de passe"
-            className="flex-1 px-3 py-2.5 rounded-xl border border-border bg-card text-sm outline-none focus:border-[hsl(var(--tc-green))] transition-colors"
-            autoComplete="current-password"
-          />
-        </div>
-
-        <div className="space-y-3 mb-6">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="w-4 h-4 rounded border-border text-[hsl(var(--tc-green))] focus:ring-[hsl(var(--tc-green))]"
-            />
-            <span className="text-xs text-muted-foreground font-medium">Se souvenir de mon email</span>
-          </label>
-          <label className="flex items-start gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={memoDemo}
-              onChange={(e) => setMemoDemo(e.target.checked)}
-              className="w-4 h-4 mt-0.5 rounded border-border text-[hsl(var(--tc-green))] focus:ring-[hsl(var(--tc-green))]"
-            />
-            <span className="text-xs text-muted-foreground leading-snug">
-              <span className="font-medium text-foreground/90">Mémoriser ce compte sur l’appareil (démo)</span>
-              <br />
-              Enregistre l’email et le mot de passe pour une reconnexion rapide. Réservé aux démonstrations.
-            </span>
-          </label>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleLogin}
-          disabled={loading || password.length < 6}
-          className="w-full py-3 rounded-xl text-sm font-semibold text-white tc-gradient-green tc-shadow-green mb-3 disabled:opacity-50"
-        >
-          {loading ? "Connexion..." : "Se connecter"}
-        </button>
-
-        <p className="text-center mt-6">
-          <button type="button" onClick={() => navigate("/inscription")} className="text-xs text-[hsl(var(--tc-green))] font-medium">
-            Pas de compte ? Créer →
+            Créer un compte
           </button>
         </p>
+      }
+    >
+      {!isSupabaseConfigured && <SupabaseAlert />}
+
+      {savedAccounts.length > 0 && (
+        <div className="mb-6 rounded-2xl border border-violet-100 bg-violet-50/50 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Users className="w-4 h-4 text-[hsl(266_62%_33%)]" />
+            <p className="text-xs font-semibold text-slate-800">Comptes sur cet appareil</p>
+          </div>
+          <p className="text-[10px] text-slate-500 mb-3 leading-relaxed">
+            Connexion en un clic pour la démo. Stockage local uniquement.
+          </p>
+          <ul className="flex flex-col gap-2">
+            {savedAccounts.map((acc) => (
+              <li
+                key={acc.email}
+                className="flex items-center gap-2 rounded-xl bg-white border border-violet-100 px-3 py-2.5 shadow-sm"
+              >
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={() => handleQuickLogin(acc)}
+                  className="flex-1 text-left min-w-0 disabled:opacity-50"
+                >
+                  <p className="text-xs font-semibold text-slate-900 truncate">{acc.label}</p>
+                  <p className="text-[10px] text-slate-400 truncate">{acc.email}</p>
+                </button>
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={(e) => handleRemoveSaved(e, acc.email)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                  aria-label={`Retirer ${acc.email}`}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <AuthField label="Adresse email" icon={Mail}>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="ama.kossou@email.com"
+          autoComplete="username"
+          className={authInputClass(true)}
+        />
+      </AuthField>
+
+      <AuthField label="Mot de passe" icon={Lock}>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Votre mot de passe"
+          autoComplete="current-password"
+          className={authInputClass(true)}
+          onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+        />
+      </AuthField>
+
+      <div className="space-y-3 mb-2">
+        <label className="flex items-center gap-2.5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            className="w-4 h-4 rounded border-violet-200 text-[hsl(266_62%_33%)] accent-[hsl(266_62%_33%)]"
+          />
+          <span className="text-xs text-slate-600">Se souvenir de mon email</span>
+        </label>
+        <label className="flex items-start gap-2.5 cursor-pointer p-3 rounded-xl bg-violet-50/60 border border-violet-100/80">
+          <input
+            type="checkbox"
+            checked={memoDemo}
+            onChange={(e) => setMemoDemo(e.target.checked)}
+            className="w-4 h-4 mt-0.5 rounded border-violet-200 text-[hsl(266_62%_33%)] accent-[hsl(266_62%_33%)]"
+          />
+          <span className="text-[11px] text-slate-600 leading-relaxed">
+            <span className="font-semibold text-slate-800">Mémoriser ce compte (démo)</span>
+            <br />
+            Reconnexion rapide pour la présentation.
+          </span>
+        </label>
       </div>
-    </div>
+
+      <AuthSubmitButton loading={loading} disabled={password.length < 6 || !email} onClick={handleLogin}>
+        <span className="inline-flex items-center justify-center gap-2">
+          Se connecter <ArrowRight className="w-4 h-4" />
+        </span>
+      </AuthSubmitButton>
+
+      <AuthTrustBadges />
+    </AuthLayout>
   );
 }
