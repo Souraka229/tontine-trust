@@ -145,7 +145,7 @@ def index():
 # ==============================================================
 
 if __name__ == "__main__":
-    print("⚡ Démarrage TontineBot...")
+    print("Demarrage TontineBot...")
     init_db()
     start_scheduler()
     try:

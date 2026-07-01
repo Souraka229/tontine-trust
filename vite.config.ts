@@ -9,7 +9,10 @@ export default defineConfig(({ mode }) => {
   process.env.VITE_SUPABASE_URL = env.VITE_SUPABASE_URL;
   process.env.VITE_SUPABASE_ANON_KEY = env.VITE_SUPABASE_ANON_KEY;
 
+  const isGitHubPages = process.env.GITHUB_PAGES === "true";
+
   return {
+  base: isGitHubPages ? "/tontine-trust/" : "/",
   server: {
     host: "::",
     port: 8080,
