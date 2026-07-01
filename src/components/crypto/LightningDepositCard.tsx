@@ -86,7 +86,7 @@ export default function LightningDepositCard({ pool, profileId, onPaid }: Props)
     setLoading(true);
     try {
       const inv = await createLnInvoice(sats, {
-        memo: "TontineChain trésor LN",
+        memo: "HACKBIT trésor LN",
         profileId,
       });
       setBolt11(inv.bolt11);

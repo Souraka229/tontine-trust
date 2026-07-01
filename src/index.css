@@ -27,7 +27,7 @@
     --ring: 243 100% 68%;
     --radius: 0.75rem;
 
-    /* TontineChain tokens */
+    /* HACKBIT tokens */
     --tc-ink: 213 78% 11%;
     --tc-text: 228 12% 22%;
     --tc-muted: 0 0% 45%;
@@ -85,7 +85,7 @@
     --input: 220 26% 17%;
     --ring: 160 38% 45%;
 
-    /* TontineChain custom tokens - dark */
+    /* HACKBIT custom tokens - dark */
     --tc-body: 220 47% 6%;
     --tc-card: 222 33% 11%;
     --tc-surface: 222 27% 13%;

@@ -28,7 +28,7 @@ export async function createLnInvoice(
   const { data, error } = await supabase.functions.invoke("lnbits-create-invoice", {
     body: {
       amount_sats: amountSats,
-      memo: opts?.memo ?? "TontineChain trésor",
+      memo: opts?.memo ?? "HACKBIT trésor",
       profile_id: opts?.profileId ?? null,
       group_id: opts?.groupId ?? null,
     },

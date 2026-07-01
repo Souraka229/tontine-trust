@@ -3,7 +3,7 @@ import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 
 /** Texte d'engagement tontinier signé ECDSA (courbe secp256k1, même famille que Bitcoin). */
 export function generateCommitmentText(groupId: string, memberName: string, amountFcfa: number) {
-  return `TontineChain · Je soussigné(e) ${memberName} m'engage à cotiser ${amountFcfa} FCFA dans le groupe ${groupId}.`;
+  return `HACKBIT · Je soussigné(e) ${memberName} m'engage à cotiser ${amountFcfa} FCFA dans le groupe ${groupId}.`;
 }
 
 export function hashCommitment(text: string): `0x${string}` {

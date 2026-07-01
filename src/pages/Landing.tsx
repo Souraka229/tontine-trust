@@ -264,7 +264,7 @@ export default function Landing() {
 
             <p className="mt-3 text-sm text-[hsl(var(--tc-muted))] leading-relaxed max-w-md">
 
-              Le trésor TontineChain est indexé sur le prix Bitcoin en temps réel.
+              Le trésor HACKBIT est indexé sur le prix Bitcoin en temps réel.
 
               Chaque groupe peut convertir sa part de cagnotte en satoshis et consulter
 
@@ -310,7 +310,7 @@ export default function Landing() {
 
           <div className="tc-card-elevated p-8">
 
-            <p className="tc-badge-emerald tc-badge mb-4">TontineChain</p>
+            <p className="tc-badge-emerald tc-badge mb-4">HACKBIT</p>
 
             <ul className="space-y-4">
 

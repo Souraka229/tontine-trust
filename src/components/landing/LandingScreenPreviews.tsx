@@ -10,7 +10,7 @@ export function HomeScreenPreview() {
         <div className="rounded-xl bg-white/12 border border-white/20 px-3 py-3 text-center">
           <p className="text-[8px] text-white/75 uppercase">Solde disponible</p>
           <p className="text-lg font-bold mt-1">0</p>
-          <p className="text-[7px] text-white/55">FCFA · TontineChain</p>
+          <p className="text-[7px] text-white/55">FCFA · HACKBIT</p>
         </div>
         <div className="flex gap-1.5 mt-2">
           {["Cotiser", "Rejoindre", "Créer"].map((l) => (
@@ -42,7 +42,7 @@ export function WhatsAppScreenPreview() {
       <div className="bg-[#1f2c34] px-3 py-2.5 flex items-center gap-2 shrink-0">
         <div className="w-6 h-6 rounded-full bg-[#25D366] shrink-0" aria-hidden />
         <div>
-          <p className="text-white text-[9px] font-semibold leading-tight">TontineChain Bot</p>
+          <p className="text-white text-[9px] font-semibold leading-tight">HACKBIT Bot</p>
           <p className="text-[#8696a0] text-[7px]">en ligne</p>
         </div>
       </div>

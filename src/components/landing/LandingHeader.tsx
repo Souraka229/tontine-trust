@@ -30,7 +30,7 @@ export default function LandingHeader() {
           <div className="w-9 h-9 rounded-xl tc-gradient-brand flex items-center justify-center shadow-[var(--tc-shadow-sm)] group-hover:scale-105 transition-transform">
             <Shield className="w-5 h-5 text-white" />
           </div>
-          <span className="font-semibold text-lg tracking-tight text-[hsl(var(--tc-ink))]">TontineChain</span>
+          <span className="font-semibold text-lg tracking-tight text-[hsl(var(--tc-ink))]">HACKBIT</span>
         </button>
 
         <nav className="hidden lg:flex items-center gap-7 text-sm font-medium text-[hsl(var(--tc-muted))]">

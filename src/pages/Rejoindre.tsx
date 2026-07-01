@@ -451,7 +451,7 @@ const [commitmentAccepted, setCommitmentAccepted] = useState(false);
         </button>
         {!alreadyMember && !isFull && (
           <p className="text-[10px] text-muted-foreground text-center mt-2">
-            🔒 Enregistrement sécurisé · TontineChain Protocol
+            🔒 Enregistrement sécurisé · HACKBIT Protocol
           </p>
         )}
       </div>

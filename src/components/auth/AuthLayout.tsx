@@ -40,7 +40,7 @@ export default function AuthLayout({ title, subtitle, backTo = "/", children, fo
               <Shield className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-xl font-bold tracking-tight">TontineChain</p>
+              <p className="text-xl font-bold tracking-tight">HACKBIT</p>
               <p className="text-xs text-white/60">Tontine digitale · Bénin 🇧🇯</p>
             </div>
           </div>
@@ -94,7 +94,7 @@ export default function AuthLayout({ title, subtitle, backTo = "/", children, fo
             <div className="w-7 h-7 rounded-lg tc-gradient-brand flex items-center justify-center">
               <Shield className="w-3.5 h-3.5 text-white" />
             </div>
-            <span className="font-bold text-sm text-[hsl(266_62%_33%)]">TontineChain</span>
+            <span className="font-bold text-sm text-[hsl(266_62%_33%)]">HACKBIT</span>
           </div>
           <span className="w-14" />
         </div>

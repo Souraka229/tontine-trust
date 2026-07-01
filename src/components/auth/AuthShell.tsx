@@ -34,7 +34,7 @@ export default function AuthShell({ title, subtitle, children, footer }: AuthShe
             <div className="w-11 h-11 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center backdrop-blur-sm group-hover:bg-white/25 transition-colors">
               <Shield className="w-6 h-6 text-white" />
             </div>
-            <span className="font-bold text-xl tracking-tight">TontineChain</span>
+            <span className="font-bold text-xl tracking-tight">HACKBIT</span>
           </button>
         </div>
 
@@ -92,7 +92,7 @@ export default function AuthShell({ title, subtitle, children, footer }: AuthShe
             <div className="w-8 h-8 rounded-xl tc-gradient-brand flex items-center justify-center">
               <Shield className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-sm text-[hsl(266_62%_33%)]">TontineChain</span>
+            <span className="font-bold text-sm text-[hsl(266_62%_33%)]">HACKBIT</span>
           </div>
           <span className="w-14" />
         </div>
