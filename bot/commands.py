@@ -7,6 +7,7 @@ from database import (
     get_member_by_id, get_all_rounds, get_current_round,
     get_payments_for_round, count_paid_in_round
 )
+from supabase_sync import sync_create_group, sync_join_group
 from whatsapp import send_message
 from messages import *
 
@@ -176,6 +177,15 @@ def _do_create_tontine(from_number, name, amount_sats, max_members,
         turn_order=turn_order
     )
 
+    sync_create_group(
+        name=name,
+        invite_code=code,
+        amount_sats=amount_sats,
+        max_members=max_members,
+        frequency=frequency,
+        creator_whatsapp=from_number,
+    )
+
     tontine = get_tontine_by_id(tontine_id)
     freq_txt = FREQ_FR.get(frequency, frequency)
     jour_txt = JOURS_FR.get(schedule_day, schedule_day)
@@ -263,6 +273,11 @@ def handle_join_step(from_number, text, raw_text):
         del PENDING_JOINS[from_number]
 
         tontine = get_tontine_by_id(tontine_id)
+        sync_join_group(
+            invite_code=state.get("code") or tontine.get("code", ""),
+            whatsapp_number=from_number,
+            turn_order=turn_order,
+        )
         current_count = count_members(tontine_id)
         max_members = tontine["max_members"]
         name = tontine["name"]

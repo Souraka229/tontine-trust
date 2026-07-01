@@ -1,6 +1,8 @@
 import { useState, useEffect, createContext, useContext, useCallback } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { linkWhatsappProfile } from "@/lib/linkWhatsappProfile";
+import { toast } from "sonner";
 
 interface Profile {
   id: string;
@@ -55,6 +57,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (data) {
           setProfile(data as Profile);
+          const linked = await linkWhatsappProfile();
+          if (linked > 0) {
+            toast.success(`${linked} groupe(s) WhatsApp relié(s) à votre compte`);
+            const { data: refreshed } = await supabase
+              .from("profiles")
+              .select("*")
+              .eq("id", userId)
+              .maybeSingle();
+            if (refreshed) setProfile(refreshed as Profile);
+          }
           return;
         }
 

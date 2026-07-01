@@ -1,10 +1,11 @@
-export type GroupFrequency = "Journalier" | "Hebdomadaire" | "Bimensuelle" | "Mensuelle" | "Trimestrielle";
+import type { GroupFrequency } from "./types.ts";
 
 const INVITE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-/** Normalise un numéro Bénin vers E.164 (+229XXXXXXXX). */
+/** Chiffres uniquement, format E.164 Bénin (+229XXXXXXXX). */
 export function normalizePhone(phone: string): string {
   let digits = phone.replace(/\D/g, "");
+  // +229 01 XX… enregistré avec un 0 national superflu → 2290… (13 chiffres)
   if (digits.startsWith("2290") && digits.length >= 12) {
     digits = `229${digits.slice(4)}`;
   }
@@ -20,16 +21,33 @@ export function normalizePhone(phone: string): string {
   return phone.replace(/\s/g, "");
 }
 
+/** Variantes pour retrouver un profil (WhatsApp Meta vs saisie formulaire). */
 export function phoneLookupVariants(phone: string): string[] {
   const canonical = normalizePhone(phone);
   const digits = canonical.replace(/\D/g, "");
-  const variants = new Set<string>([canonical, digits, `+${digits}`]);
+  const variants = new Set<string>([
+    canonical,
+    digits,
+    `+${digits}`,
+    digits.replace(/^\+/, ""),
+  ]);
   if (digits.startsWith("229") && digits.length >= 11) {
     const national = digits.slice(3);
     variants.add(`+2290${national}`);
     variants.add(`2290${national}`);
+    variants.add(`+229 ${national.slice(0, 2)} ${national.slice(2)}`);
   }
   return [...variants];
+}
+
+export function formatFCFA(n: number): string {
+  return `${Math.round(n).toLocaleString("fr-FR")} FCFA`;
+}
+
+export function formatBtc(btc: number): string {
+  if (btc >= 1) return `${btc.toFixed(4)} BTC`;
+  if (btc >= 0.001) return `${btc.toFixed(6)} BTC`;
+  return `${Math.round(btc * 1e8).toLocaleString("fr-FR")} sats`;
 }
 
 export function generateInviteCode(): string {

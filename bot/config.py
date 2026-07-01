@@ -17,5 +17,9 @@ LNBITS_WALLET_ID = os.getenv("LNBITS_WALLET_ID", "")
 # Serveur
 PORT = int(os.getenv("PORT", 5000))
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
-DATABASE_PATH = os.getenv("DATABASE_PATH", "tontinebot.db")
+DATABASE_PATH = os.getenv("DATABASE_PATH", "flashbot.db")
 BASE_URL = os.getenv("BASE_URL", "http://localhost:5000")
+
+# Supabase (sync groupes bot → app web — même base de données)
+SUPABASE_URL = os.getenv("SUPABASE_URL") or os.getenv("VITE_SUPABASE_URL")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
