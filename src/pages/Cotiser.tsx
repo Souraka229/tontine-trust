@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import TopBar from "@/components/layout/TopBar";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, Bitcoin } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
 import { payFromWallet, KkiapayResponse } from "@/lib/kkiapay";
@@ -9,9 +9,6 @@ import PhoneInput from "@/components/ui/PhoneInput";
 import { toast } from "sonner";
 import { runTontineAutomation } from "@/lib/tontineAutomation";
 import KkiapayWidget from "@/components/ui/KkiapayWidget";
-import { useAction, useMutation, useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { isConvexConfigured } from "@/lib/convex";
 
 const OPERATORS = [
   { id: "mtn", name: "MTN MoMo", shortName: "MTN", color: "#FFA500", textColor: "#fff" },
@@ -41,64 +38,25 @@ export default function Cotiser() {
   const [step, setStep] = useState<PayStep>("form");
   const [payResult, setPayResult] = useState<KkiapayResponse | null>(null);
   const [showKkiapayWidget, setShowKkiapayWidget] = useState(false);
-  const convexGroups = useQuery(api.tontines.listMyGroups, isConvexConfigured && user ? {} : "skip");
-  const currentRound = useQuery(
-    api.tontines.currentRoundForGroup,
-    isConvexConfigured && selectedGroup && !selectedGroup.id.includes("-") ? { groupId: selectedGroup.id } : "skip"
-  );
-  const payConvexWallet = useMutation(api.payments.payContributionFromWallet);
-  const createConvexRequest = useMutation(api.payments.createContributionRequest);
-  const verifyConvexPayment = useAction(api.paymentActions.verifyKkiapayAndSettle);
 
   useEffect(() => {
-    if (convexGroups) {
-      const activeGroups = convexGroups
-        .filter((group) => group.status === "active")
-        .map((group) => ({
-          id: group.id,
-          name: group.name,
-          contribution_amount: group.contributionAmount,
-        }));
-      setGroups(activeGroups);
-      if (activeGroups.length > 0) {
-        const fromUrl = groupIdFromUrl && activeGroups.find((g) => g.id === groupIdFromUrl);
-        setSelectedGroup(fromUrl ?? activeGroups[0]);
-      }
-      return;
-    }
-    if (isConvexConfigured) return;
-    console.log("Cotiser useEffect triggered, user:", user);
-    
-    if (!user) {
-      console.log("No user found, returning");
-      return;
-    }
-    
-    console.log("Loading groups for user:", user.id);
-    
-    // D'abord vérifier les memberships
+    if (!user) return;
     supabase
       .from("group_members")
       .select("*")
       .eq("profile_id", user.id)
       .then(({ data: members, error }) => {
-        console.log("Supabase response - members:", members, "error:", error);
-        
         if (error) {
-          console.error("Error fetching memberships:", error);
           setGroups([]);
           return;
         }
         
         if (!members || members.length === 0) {
-          console.log("No memberships found");
           setGroups([]);
           return;
         }
         
-        // Ensuite charger les détails des groupes
         const groupIds = members.map(m => m.group_id);
-        console.log("Group IDs to fetch:", groupIds);
         
         return supabase
           .from("groups")
@@ -107,15 +65,11 @@ export default function Cotiser() {
           .eq("status", "active");
       })
       .then(({ data: groups, error }) => {
-        console.log("Supabase response - groups:", groups, "error:", error);
-        
         if (error) {
-          console.error("Error fetching groups:", error);
           setGroups([]);
           return;
         }
         
-        console.log("Active groups:", groups);
         const list = groups || [];
         setGroups(list);
         if (list.length > 0) {
@@ -127,11 +81,10 @@ export default function Cotiser() {
           }
         }
       })
-      .catch(error => {
-        console.error("Unexpected error loading groups:", error);
+      .catch(() => {
         setGroups([]);
       });
-  }, [convexGroups, groupIdFromUrl, user]);
+  }, [groupIdFromUrl, user]);
 
   useEffect(() => { if (profile?.phone) setPhone(profile.phone); }, [profile]);
 
@@ -139,53 +92,20 @@ export default function Cotiser() {
   const total = (selectedGroup?.contribution_amount || 0) + fees;
 
   const handleConfirm = async () => {
-    console.log("🔥 handleConfirm appelé");
-    console.log("🔥 operator:", operator);
-    console.log("🔥 user:", user);
-    console.log("🔥 selectedGroup:", selectedGroup);
-    console.log("🔥 phone:", phone);
-    
     const needPhone = operator !== "wallet";
     const digits = phone.replace(/\D/g, "");
     
     if (!user || !selectedGroup) {
-      console.log("❌ Pas d'utilisateur ou de groupe");
       toast.error("Sélectionnez un groupe");
       return;
     }
     if (needPhone && digits.length < 8) {
-      console.log("❌ Numéro invalide:", digits.length);
       toast.error("Numéro de téléphone invalide");
       return;
     }
 
     if (operator === "wallet") {
-      console.log("💳 Paiement portefeuille");
       setStep("processing");
-      if (isConvexConfigured && selectedGroup.id && !selectedGroup.id.includes("-")) {
-        if (!currentRound) {
-          toast.error("Aucun tour actif pour ce groupe.");
-          setStep("form");
-          return;
-        }
-        try {
-          await payConvexWallet({
-            groupId: selectedGroup.id,
-            roundId: currentRound.roundId,
-          });
-          setPayResult({
-            success: true,
-            transactionId: `WT-${Date.now().toString(36).toUpperCase()}`,
-            status: "wallet_transfer",
-            message: "Paiement via portefeuille réussi.",
-          });
-          setStep("done");
-        } catch (error: unknown) {
-          toast.error(error instanceof Error ? error.message : "Échec du paiement portefeuille");
-          setStep("error");
-        }
-        return;
-      }
       const result = await payFromWallet({
         amount: total,
         profile_id: user.id,
@@ -208,43 +128,8 @@ export default function Cotiser() {
         setStep("error");
       }
     } else {
-      if (isConvexConfigured && selectedGroup.id && !selectedGroup.id.includes("-")) {
-        if (!currentRound) {
-          toast.error("Aucun tour actif pour ce groupe.");
-          return;
-        }
-        setStep("processing");
-        try {
-          const paymentRequestId = await createConvexRequest({
-            groupId: selectedGroup.id,
-            roundId: currentRound.roundId,
-            amount: selectedGroup.contribution_amount,
-            customerPhone: digits,
-            operator,
-          });
-          const result = await verifyConvexPayment({
-            paymentRequestId,
-            transactionId: `KK-DEMO-${Date.now().toString(36).toUpperCase()}`,
-          });
-          setPayResult({
-            success: result.success,
-            transactionId: result.providerReference,
-            status: result.status,
-            message: result.success ? "Cotisation validée côté serveur Convex." : "Paiement refusé.",
-          });
-          setStep(result.success ? "done" : "error");
-        } catch (error: unknown) {
-          toast.error(error instanceof Error ? error.message : "Échec de la vérification du paiement");
-          setStep("error");
-        }
-        return;
-      }
-      console.log("📱 Paiement mobile money - ouverture directe du widget");
-      console.log("📯 Début du processus:", { step: "processing", showKkiapayWidget: true });
-      // Afficher le spinner puis ouvrir le widget Kkiapay
       setStep("processing");
       setShowKkiapayWidget(true);
-      console.log("📯 setShowKkiapayWidget appelé");
     }
   };
 
@@ -559,6 +444,23 @@ export default function Cotiser() {
               </p>
             </div>
           )}
+
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-left mb-4">
+            <p className="text-xs font-bold text-amber-900 mb-1 flex items-center gap-2">
+              <Bitcoin className="w-4 h-4" />
+              Prochaine étape · Trésor Bitcoin
+            </p>
+            <p className="text-[11px] text-amber-950/80 mb-3">
+              Convertissez une partie de votre solde FCFA en satoshis et alimentez le trésor collectif indexé sur le cours live.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate("/crypto")}
+              className="w-full py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-amber-500 to-orange-500"
+            >
+              Ouvrir le trésor Bitcoin
+            </button>
+          </div>
 
           <button onClick={() => navigate("/home")} className="w-full py-3 rounded-xl text-sm font-semibold text-white tc-gradient-green tc-shadow-green mb-3">
             Retour à l'accueil

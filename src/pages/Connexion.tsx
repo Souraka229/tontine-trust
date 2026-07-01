@@ -45,7 +45,10 @@ export default function Connexion() {
       refreshSaved();
     }
     toast.success("Connexion réussie !");
-    navigate("/home");
+    const params = new URLSearchParams(window.location.search);
+    const next = params.get("next");
+    const dest = next && next.startsWith("/") && !next.startsWith("//") ? next : "/home";
+    navigate(dest);
   };
 
   const handleLogin = async () => {
@@ -64,7 +67,11 @@ export default function Connexion() {
       if (error) throw error;
       finishLogin(email, password);
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : "Identifiants incorrects";
+      const raw = error instanceof Error ? error.message : "Identifiants incorrects";
+      const msg =
+        raw === "Failed to fetch"
+          ? "Impossible de joindre Supabase. Redémarrez npm run dev après avoir vérifié .env, ou vérifiez votre connexion internet."
+          : raw;
       toast.error(msg);
     } finally {
       setLoading(false);

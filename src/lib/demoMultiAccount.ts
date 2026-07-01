@@ -1,7 +1,11 @@
 /**
- * Comptes multiples sur un même appareil — UNIQUEMENT pour démonstration.
+ * Comptes multiples sur un même appareil — UNIQUEMENT en développement local.
  * Les mots de passe sont stockés en clair dans localStorage (jamais en production).
  */
+export function isDemoAccountsEnabled(): boolean {
+  return import.meta.env.DEV;
+}
+
 const STORAGE_KEY = "tontine_trust_demo_accounts_v1";
 const MAX_ACCOUNTS = 12;
 
@@ -13,6 +17,7 @@ export interface DemoAccountRecord {
 }
 
 export function getDemoAccounts(): DemoAccountRecord[] {
+  if (!isDemoAccountsEnabled()) return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
@@ -49,6 +54,7 @@ function persist(list: DemoAccountRecord[]) {
 
 /** Ajoute ou remplace le compte (identifié par l’email, insensible à la casse). */
 export function saveDemoAccount(email: string, password: string, label?: string) {
+  if (!isDemoAccountsEnabled()) return;
   try {
     const trimmed = email.trim();
     const norm = trimmed.toLowerCase();
@@ -67,10 +73,12 @@ export function saveDemoAccount(email: string, password: string, label?: string)
 }
 
 export function removeDemoAccount(email: string) {
+  if (!isDemoAccountsEnabled()) return;
   const norm = email.trim().toLowerCase();
   persist(getDemoAccounts().filter((a) => a.email.toLowerCase() !== norm));
 }
 
 export function clearDemoAccounts() {
+  if (!isDemoAccountsEnabled()) return;
   localStorage.removeItem(STORAGE_KEY);
 }

@@ -109,15 +109,21 @@ export function formatUsd(usd: number): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(usd);
 }
 
-/** Adresse démo pour explorer la blockchain (lecture seule via mempool.space). */
+import { getMempoolApiBase } from "@/lib/bitcoinNetwork";
+
+/** Adresse démo lecture seule (mainnet) — préférez VITE_BTC_TREASURY_ADDRESS. */
 export const DEMO_BTC_TREASURY = "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh";
 
-export async function fetchAddressSummary(address: string): Promise<{
+export async function fetchAddressSummary(
+  address: string,
+  network?: import("@/lib/bitcoinNetwork").BtcNetwork,
+): Promise<{
   address: string;
   chainStats: { funded_txo_sum: number; spent_txo_sum: number; tx_count: number };
 } | null> {
   try {
-    const res = await fetch(`https://mempool.space/api/address/${address}`);
+    const base = getMempoolApiBase(network);
+    const res = await fetch(`${base}/address/${address}`);
     if (!res.ok) return null;
     const json = (await res.json()) as {
       address: string;

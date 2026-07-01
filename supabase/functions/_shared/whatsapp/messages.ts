@@ -14,9 +14,10 @@ export const MSG_AIDE = `🟢 *TontineChain Bot*
 • /score — score de confiance
 • /notifs — notifications
 
-*Bitcoin*
+*Bitcoin & Lightning*
 • /bitcoin — cours live
 • /liquidity — trésor collectif
+• INVOICE 500 — facture Lightning (sats)
 
 Tapez *ANNULER* pour quitter un assistant en cours.`;
 

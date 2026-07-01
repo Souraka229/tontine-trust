@@ -5,10 +5,8 @@ import ProgressBar from "@/components/ui/ProgressBar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
 import { generateInviteCode } from "../../supabase/functions/_shared/whatsapp/utils";
+import { DEMO_NSIA_POLICY_NUMBER } from "@/config/insurance";
 import { toast } from "sonner";
-import { useMutation } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { isConvexConfigured } from "@/lib/convex";
 import {
   Info, ShieldCheck, TrendingUp, Users, Calendar,
   Coins, Clock, ChevronRight, Zap, Lock
@@ -45,12 +43,10 @@ export default function CreerGroupe() {
     memberCount: "5",   // nombre total de membres (vous inclus)
     order: "random",
     penalty: "5",
-    guarantee: "",
+    guarantee: DEMO_NSIA_POLICY_NUMBER,
     minScore: "0",
     commitmentAccepted: false,
   });
-  const createConvexGroup = useMutation(api.tontines.createGroup);
-
   useEffect(() => {
     const seen = localStorage.getItem("hasSeenCreationIntro");
     if (!seen) setShowIntro(true);
@@ -98,25 +94,6 @@ export default function CreerGroupe() {
         .slice(0, 2) || "GR";
       const colors = ["green", "blue", "amber", "purple", "red"];
       const color = colors[Math.floor(Math.random() * colors.length)];
-
-      if (isConvexConfigured) {
-        const groupId = await createConvexGroup({
-          name: form.name.trim(),
-          contributionAmount: parseFloat(form.amount),
-          frequency: form.frequency,
-          maxMembers,
-          orderType: form.order === "random" ? "random" : "manual",
-          penaltyRate: parseFloat(form.penalty) || 5,
-          minScore: parseInt(form.minScore, 10) || 0,
-          coverageType: "life_insurance",
-          coverageReference: form.guarantee.trim(),
-          commitmentAccepted: form.commitmentAccepted,
-        });
-        await refreshProfile();
-        toast.success("Groupe créé dans Convex avec règles et engagement hashés.");
-        navigate(`/groupe/${groupId}`);
-        return;
-      }
 
       const { data, error } = await supabase
         .from("groups")
@@ -446,7 +423,7 @@ export default function CreerGroupe() {
                 type="text"
                 value={form.guarantee}
                 onChange={(e) => setForm({ ...form, guarantee: e.target.value })}
-                placeholder="Ex : NSIA-VIE-12345"
+                placeholder={DEMO_NSIA_POLICY_NUMBER}
                 className="w-full px-4 py-3 rounded-3xl border border-border bg-card text-sm outline-none focus:border-[hsl(var(--tc-green))] transition-colors"
               />
               <div className="rounded-3xl border border-[hsla(38,92%,50%,0.15)] bg-[hsla(38,92%,50%,0.06)] p-3 text-[10px] text-muted-foreground">

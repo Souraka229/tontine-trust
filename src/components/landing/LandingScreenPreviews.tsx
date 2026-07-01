@@ -77,7 +77,7 @@ export function CryptoScreenPreview({ tvlFcfa, btcReserve }: { tvlFcfa: number; 
     <div className="min-h-full bg-background text-left px-3 pt-7 pb-3">
       <p className="text-[10px] font-bold mb-2">Trésor Bitcoin</p>
       <div className="rounded-xl tc-gradient-brand text-white p-3 mb-2">
-        <p className="text-[8px] opacity-80">Trésor multisig</p>
+        <p className="text-[8px] opacity-80">Garde collective 3/5</p>
         <p className="text-sm font-bold">{formatFCFA(tvlFcfa)}</p>
         <p className="text-[7px] opacity-75 mt-0.5">{btcReserve.toFixed(2)} BTC en réserve</p>
       </div>

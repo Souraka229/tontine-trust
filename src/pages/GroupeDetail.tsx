@@ -7,9 +7,6 @@ import { Settings, Users, Clock, TrendingUp, Shield, Database, Cpu, Link2, Check
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { runTontineAutomation } from "@/lib/tontineAutomation";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { isConvexConfigured } from "@/lib/convex";
 import { toast } from "sonner";
 import {
   generateCommitmentText,
@@ -17,6 +14,7 @@ import {
   signCommitment,
 } from "@/lib/bitcoinProof";
 import { fetchGroupCommitments, recordBitcoinCommitment, type CommitmentRecord } from "@/lib/bitcoinRepository";
+import CollectiveCustodyCard from "@/components/governance/CollectiveCustodyCard";
 import { generateInviteCode } from "../../supabase/functions/_shared/whatsapp/utils";
 
 interface Group {
@@ -39,6 +37,8 @@ interface Group {
   order_type?: string;
   created_by: string | null;
   invite_code?: string | null;
+  governance_threshold?: number;
+  governance_quorum?: number;
 }
 
 interface Member {
@@ -79,11 +79,6 @@ export default function GroupeDetail() {
   const [members, setMembers] = useState<Member[]>([]);
   const [isMember, setIsMember] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const convexDetail = useQuery(
-    api.tontines.getGroupDetail,
-    isConvexConfigured && id && !id.includes("-") ? { groupId: id } : "skip"
-  );
-  const activateGroupMutation = useMutation(api.tontines.activateGroup);
   const [activating, setActivating] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
   const [hasSigned, setHasSigned] = useState(false);
@@ -115,18 +110,22 @@ export default function GroupeDetail() {
   const handleSignDocument = async () => {
     setIsSigning(true);
     try {
-      const beneficiary = members.find(m => m.profile_id === beneficiaryId);
+      if (!group || !id) throw new Error("Groupe introuvable");
+      const beneficiary = members.find((m) => m.profile_id === beneficiaryId);
       if (!beneficiary) throw new Error("Bénéficiaire introuvable");
-      const text = generateCommitmentText(id || "", beneficiary.profiles?.name || "", group?.contribution_amount! * group?.members_count!);
+      const payoutAmount = group.contribution_amount * group.members_count;
+      const text = generateCommitmentText(id, beneficiary.profiles?.name || "", payoutAmount);
       const hash = hashCommitment(text);
       const { signature, pubkeyHint } = await signCommitment(hash);
-      
+
       await supabase.from("payout_requests").insert({
         group_id: id,
         member_id: beneficiary.profile_id,
         document_hash: hash,
         signature: signature,
-        status: "pending_approval"
+        round_number: group.current_round,
+        status: "pending_approvals",
+        approval_count: 0,
       });
 
       await recordBitcoinCommitment({
@@ -136,7 +135,7 @@ export default function GroupeDetail() {
         document_hash: hash,
         signature,
         pubkey_hint: pubkeyHint,
-        amount_fcfa: group?.contribution_amount! * group?.members_count!,
+        amount_fcfa: payoutAmount,
       });
       
       setHasSigned(true);
@@ -151,26 +150,6 @@ export default function GroupeDetail() {
     }
   };
 
-  const handleApprovePayout = async () => {
-    if (!id || !isAdmin) return;
-    try {
-      const { error: approveErr } = await supabase
-        .from("payout_requests")
-        .update({ status: "approved", creator_approved: true })
-        .eq("group_id", id)
-        .in("status", ["pending_approval", "pending_signature"]);
-
-      if (approveErr) throw approveErr;
-
-      await runTontineAutomation();
-      toast.success("Versement approuvé — automation lancée");
-      await fetchData();
-    } catch (err) {
-      console.error(err);
-      toast.error(err instanceof Error ? err.message : "Approbation impossible");
-    }
-  };
-
   const handleDeclareDeceased = async (memberId: string) => {
     if (!confirm("Voulez-vous vraiment déclarer ce membre décédé ? L'assurance vie prendra le relais.")) return;
     await supabase.from("group_members").update({ status: "deceased" }).eq("id", memberId);
@@ -182,12 +161,6 @@ export default function GroupeDetail() {
     if (!id || activating) return;
     setActivating(true);
     try {
-      if (isConvexConfigured && id && !id.includes("-")) {
-        await activateGroupMutation({ groupId: id as never });
-        toast.success("Tontine activée. Le premier tour commence.");
-        return;
-      }
-
       const { error } = await supabase.rpc("rpc_activate_group", { p_group_id: id });
       if (error) throw error;
       toast.success("Tontine activée. Le premier tour commence.");
@@ -203,8 +176,6 @@ export default function GroupeDetail() {
 
   const fetchData = useCallback(async () => {
     if (!id) return;
-    if (isConvexConfigured && !id.includes("-")) return;
-    // Automation en arrière-plan
     runTontineAutomation().catch(() => {});
     try {
       const [{ data: gRow }, { data: mRows }] = await Promise.all([
@@ -223,7 +194,22 @@ export default function GroupeDetail() {
         setIsMember(!!me);
         setIsAdmin(me?.role === "admin");
       }
-      if (id) {
+      if (id && gRow && user) {
+        const proofs = await fetchGroupCommitments(id);
+        setCommitments(proofs);
+        const round = (gRow as Group).current_round;
+        if (round > 0) {
+          const { data: pr } = await supabase
+            .from("payout_requests")
+            .select("id")
+            .eq("group_id", id)
+            .eq("round_number", round)
+            .eq("member_id", user.id)
+            .in("status", ["pending_approvals", "pending_approval", "approved", "pending_signature"])
+            .maybeSingle();
+          setHasSigned(!!pr);
+        }
+      } else if (id) {
         const proofs = await fetchGroupCommitments(id);
         setCommitments(proofs);
       }
@@ -236,42 +222,6 @@ export default function GroupeDetail() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
-  useEffect(() => {
-    if (!convexDetail) return;
-    setGroup({
-      id: convexDetail.group.id,
-      name: convexDetail.group.name,
-      initials: convexDetail.group.initials,
-      color: convexDetail.group.color,
-      contribution_amount: convexDetail.group.contributionAmount,
-      frequency: convexDetail.group.frequency as Group["frequency"],
-      current_round: convexDetail.group.currentRound,
-      total_rounds: convexDetail.group.totalRounds,
-      total_pool: convexDetail.group.totalPool,
-      guarantee_deposit: 0,
-      status: convexDetail.group.status as Group["status"],
-      next_payout_date: convexDetail.group.nextPayoutAt ? new Date(convexDetail.group.nextPayoutAt).toISOString() : null,
-      cotisation_deadline_at: convexDetail.group.contributionDeadlineAt ? new Date(convexDetail.group.contributionDeadlineAt).toISOString() : null,
-      max_members: convexDetail.group.maxMembers,
-      members_count: convexDetail.group.membersCount,
-      penalty_rate: convexDetail.group.penaltyRate,
-      order_type: "random",
-      created_by: null,
-    });
-    setMembers(convexDetail.members.map((member) => ({
-      id: member.id,
-      profile_id: member.userId,
-      turn_order: member.turnOrder,
-      status: member.status as Member["status"],
-      paid_date: null,
-      role: member.role as Member["role"],
-      guarantee_status: member.coverageStatus as Member["guarantee_status"],
-      profiles: { name: member.name, initials: member.initials },
-    })));
-    setIsMember(convexDetail.isMember);
-    setIsAdmin(convexDetail.isAdmin);
-  }, [convexDetail]);
 
   if (group === undefined) {
     return (
@@ -306,7 +256,7 @@ export default function GroupeDetail() {
   const totalDue = sorted.filter((m) => m.status !== "excluded").length;
   const isCompleted = group.status === "completed" || group.current_round > group.total_rounds;
   const orderMode = group.order_type === "manual" ? "Manuel" : "Aléatoire";
-  const latestProof = convexDetail?.proofs?.[0];
+  const latestProof = commitments[0];
 
   return (
     <div className="animate-fade-in pb-6">
@@ -368,7 +318,7 @@ export default function GroupeDetail() {
                 <Link2 className="w-4 h-4 text-amber-700" />
               </div>
               <div>
-                <h3 className="text-[11px] font-semibold text-foreground/90 tracking-tight">Preuves Bitcoin</h3>
+                <h3 className="text-[11px] font-semibold text-foreground/90 tracking-tight">Engagements signés</h3>
                 <p className="text-[9px] text-muted-foreground">Engagements secp256k1 · registre consultable</p>
               </div>
             </div>
@@ -380,7 +330,7 @@ export default function GroupeDetail() {
             <div>
               <p className="text-[8px] uppercase tracking-wide text-muted-foreground mb-0.5">Dernière preuve</p>
               <p className="text-[10px] font-mono-tech truncate text-amber-900/80 dark:text-amber-200/80">
-                {commitments[0]?.document_hash?.slice(0, 22) ?? latestProof?.payloadHash?.slice(0, 22) ?? (group.id || "").slice(0, 18) + "..."}
+                {commitments[0]?.document_hash?.slice(0, 22) ?? (group.id || "").slice(0, 18) + "..."}
               </p>
             </div>
             <div>
@@ -440,24 +390,26 @@ export default function GroupeDetail() {
                       disabled={isSigning || hasSigned}
                       className="w-full py-2.5 rounded-lg text-xs font-bold text-white bg-[hsl(var(--tc-green))] disabled:opacity-50"
                     >
-                      {hasSigned ? "✓ Document signé" : isSigning ? "Signature…" : "Signer engagement (Bitcoin)"}
+                      {hasSigned ? "✓ Document signé" : isSigning ? "Signature…" : "Signer (ECDSA secp256k1)"}
                     </button>
                  </div>
               )}
               
-              {isAdmin && user?.id !== beneficiaryId && (
-                <div className="mt-2">
-                    <button 
-                      onClick={handleApprovePayout}
-                      className="w-full py-2.5 rounded-lg text-xs font-bold text-white bg-[hsl(var(--tc-blue))] hover:bg-opacity-90"
-                    >
-                      Approuver le versement
-                    </button>
-                </div>
-              )}
+              <CollectiveCustodyCard
+                groupId={id!}
+                roundNumber={group.current_round}
+                profileId={user?.id}
+                threshold={group.governance_threshold ?? 3}
+                quorum={group.governance_quorum ?? 5}
+                payoutSigned={hasSigned}
+                onApproved={() => {
+                  void runTontineAutomation();
+                  void fetchData();
+                }}
+              />
               
               <p className="text-[9px] text-muted-foreground text-center mt-1">
-                La somme sera versée une fois la reconnaissance de dette signée et approuvée.
+                La cagnotte est versée après signature du bénéficiaire et validation {group.governance_threshold ?? 3}/{group.governance_quorum ?? 5} des gardiens.
               </p>
             </div>
           </div>

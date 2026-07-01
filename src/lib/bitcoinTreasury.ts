@@ -1,15 +1,16 @@
 import { DEMO_BTC_TREASURY, fetchAddressSummary, formatBtc, satsToBtc } from "@/lib/bitcoin";
+import {
+  getTreasuryAddress,
+  getTreasuryExplorerUrl,
+  getBtcNetwork,
+  isTreasuryConfigured,
+} from "@/lib/bitcoinNetwork";
 import type { BtcLiquidityPool } from "@/lib/bitcoinWallet";
 
-/** Adresse trésor configurable en prod (lecture seule mempool.space). */
-export function getTreasuryAddress(): string {
-  const fromEnv = (import.meta.env.VITE_BTC_TREASURY_ADDRESS as string | undefined)?.trim();
-  return fromEnv || DEMO_BTC_TREASURY;
-}
+export { getTreasuryAddress, getTreasuryExplorerUrl, isTreasuryConfigured, getBtcNetwork };
 
-export function getTreasuryExplorerUrl(address = getTreasuryAddress()): string {
-  return `https://mempool.space/fr/address/${address}`;
-}
+/** @deprecated utilisez getTreasuryAddress depuis bitcoinNetwork */
+export const LEGACY_DEMO_TREASURY = DEMO_BTC_TREASURY;
 
 export interface OnChainTreasury {
   address: string;
@@ -22,8 +23,19 @@ export interface OnChainTreasury {
   source: "mempool.space" | "unavailable";
 }
 
-/** Solde on-chain = UTXO nets (funded − spent) via mempool.space. */
 export async function fetchOnChainTreasury(address = getTreasuryAddress()): Promise<OnChainTreasury> {
+  if (!address) {
+    return {
+      address: "",
+      balanceSats: 0,
+      balanceBtc: 0,
+      txCount: 0,
+      fundedSats: 0,
+      spentSats: 0,
+      syncedAt: new Date().toISOString(),
+      source: "unavailable",
+    };
+  }
   const summary = await fetchAddressSummary(address);
   if (!summary) {
     return {
@@ -56,20 +68,19 @@ export async function fetchOnChainTreasury(address = getTreasuryAddress()): Prom
 export interface TreasuryReconciliation {
   book: BtcLiquidityPool;
   onChain: OnChainTreasury;
-  /** Écart comptable vs chaîne (sats) — transparent pour le jury. */
+  /** Écart sats ingérés en base vs solde mempool live */
   deltaSats: number;
   priceXof?: number;
   onChainFcfa?: number;
 }
 
-/** Compare le registre interne (Supabase/local) au solde vérifiable on-chain. */
 export function reconcileTreasury(
   book: BtcLiquidityPool,
   onChain: OnChainTreasury,
   priceXof?: number,
 ): TreasuryReconciliation {
-  const bookSats = Math.round(book.btcReserve * 1e8);
-  const deltaSats = bookSats - onChain.balanceSats;
+  const bookOnChainSats = book.onChainSats ?? Math.round(book.btcReserve * 1e8);
+  const deltaSats = bookOnChainSats - onChain.balanceSats;
   return {
     book,
     onChain,
@@ -80,15 +91,19 @@ export function reconcileTreasury(
 }
 
 export function formatDeltaSats(delta: number): string {
+  if (delta === 0) return "0 sats (aligné)";
   const sign = delta >= 0 ? "+" : "";
   return `${sign}${delta.toLocaleString("fr-FR")} sats`;
 }
 
 export function describeTreasuryRole(): string {
   return [
-    "Le trésor TontineChain indexe les cotisations FCFA sur le cours Bitcoin (CoinGecko).",
-    "La réserve est vérifiable sur mempool.space ; les engagements de groupe sont signés secp256k1.",
-    "Les conversions FCFA→sats et le staking alimentent le registre comptable partagé (Supabase).",
+    "La tontine cotise en FCFA via Kkiapay (MoMo). Le trésor Bitcoin a trois volets :",
+    "① Lightning LNbits — dépôts instantanés (facture BOLT11).",
+    "② On-chain — dépôts bc1q… sync mempool.space.",
+    "③ Registre interne — FCFA→sats, stake, 2 % cotisations (btc_ledger).",
+    "④ Garde collective 3/5 (inspirée Bitsacco) — décaissement validé par plusieurs gardiens.",
+    "Roadmap : multisig on-chain / Fedimint.",
   ].join(" ");
 }
 

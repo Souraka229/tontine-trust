@@ -2,9 +2,6 @@ import { useEffect, useState } from "react";
 import TopBar from "@/components/layout/TopBar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
-import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { isConvexConfigured } from "@/lib/convex";
 
 interface Transaction {
   id: string;
@@ -15,9 +12,9 @@ interface Transaction {
   groups?: { name: string } | null;
 }
 
-type ConvexFilter = "all" | "payout" | "contribution" | "penalty";
+type TxFilter = "all" | "payout" | "contribution" | "penalty";
 
-const filters: Array<{ label: string; value: ConvexFilter }> = [
+const filters: Array<{ label: string; value: TxFilter }> = [
   { label: "Tout", value: "all" },
   { label: "Reçus", value: "payout" },
   { label: "Cotisations", value: "contribution" },
@@ -26,34 +23,13 @@ const filters: Array<{ label: string; value: ConvexFilter }> = [
 
 export default function Historique() {
   const { user } = useAuth();
-  const [activeFilter, setActiveFilter] = useState<ConvexFilter>("all");
+  const [activeFilter, setActiveFilter] = useState<TxFilter>("all");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const convexTransactions = useQuery(
-    api.history.listMine,
-    isConvexConfigured && user ? { filter: activeFilter } : "skip"
-  );
-
   useEffect(() => {
-    if (!isConvexConfigured) return;
-    if (!convexTransactions) return;
-    setTransactions(
-      convexTransactions.map((t) => ({
-        id: t.id,
-        type: t.type,
-        name: t.name,
-        amount: t.amount,
-        created_at: new Date(t.createdAt).toISOString(),
-        groups: t.groupName ? { name: t.groupName } : null,
-      }))
-    );
-    setLoading(false);
-  }, [convexTransactions]);
-
-  useEffect(() => {
-    if (isConvexConfigured) return;
     if (!user) return;
+    setLoading(true);
     supabase
       .from("transactions")
       .select("*, groups(name)")
@@ -63,7 +39,7 @@ export default function Historique() {
         setTransactions((data as Transaction[]) || []);
         setLoading(false);
       });
-  }, [user]);
+  }, [user, activeFilter]);
 
   const filtered = transactions.filter((t) => {
     if (activeFilter === "all") return true;

@@ -1,7 +1,7 @@
 import { hashMessage, recoverMessageAddress } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 
-/** Texte d'engagement tontinier (ancré / signé style Bitcoin secp256k1). */
+/** Texte d'engagement tontinier signé ECDSA (courbe secp256k1, même famille que Bitcoin). */
 export function generateCommitmentText(groupId: string, memberName: string, amountFcfa: number) {
   return `TontineChain · Je soussigné(e) ${memberName} m'engage à cotiser ${amountFcfa} FCFA dans le groupe ${groupId}.`;
 }

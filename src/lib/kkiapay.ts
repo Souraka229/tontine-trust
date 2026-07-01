@@ -5,9 +5,9 @@ const KKIAPAY_PUBLIC_KEY = import.meta.env.VITE_KKIAPAY_PUBLIC_KEY;
 const KKIAPAY_PRIVATE_KEY = import.meta.env.VITE_KKIAPAY_PRIVATE_KEY;
 const KKIAPAY_SECRET = import.meta.env.VITE_KKIAPAY_SECRET;
 
-/** Démo : crédit / débit immédiat côté DB (triggers). Mettre VITE_DEMO_PAYMENTS=false en prod avec webhooks réels. */
+/** Démo : crédit immédiat côté DB. En prod : VITE_DEMO_PAYMENTS=true uniquement pour sandbox local. */
 function isImmediateDemoSettlement(): boolean {
-  return import.meta.env.VITE_DEMO_PAYMENTS !== "false";
+  return import.meta.env.VITE_DEMO_PAYMENTS === "true";
 }
 
 export interface PaymentPayload {

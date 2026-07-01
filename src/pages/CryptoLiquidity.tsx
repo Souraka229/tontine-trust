@@ -5,28 +5,29 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import BitcoinLiveCard from "@/components/crypto/BitcoinLiveCard";
 import BitcoinTreasuryOnChain from "@/components/crypto/BitcoinTreasuryOnChain";
+import LightningDepositCard from "@/components/crypto/LightningDepositCard";
 import { useBitcoinPrice } from "@/hooks/useBitcoinPrice";
 import { formatBtc, fcfaToBtc } from "@/lib/bitcoin";
 import { describeTreasuryRole } from "@/lib/bitcoinTreasury";
 import {
-  connectAndPersistWallet,
-  fetchGroupCommitments,
-  loadBtcWallet,
-  persistBtcPool,
-  persistBtcWallet,
+  buyBtcWithFcfa,
+  fetchBtcPool,
+  fetchBtcWallet,
+  fetchLedger,
+  fetchMyCommitments,
+  linkBtcWallet,
   recordBitcoinCommitment,
-  syncBtcPool,
+  stakeBtcSats,
   type CommitmentRecord,
 } from "@/lib/bitcoinRepository";
-import { supabase } from "@/lib/supabase";
 import {
-  getBtcPool,
-  getBtcWallet,
-  buySatsWithFcfa,
-  stakeSats,
+  emptyPool,
   formatFCFA,
   shortenBtcAddress,
   fcfaToSatsRate,
+  type BtcLiquidityPool,
+  type BtcLedgerEntry,
+  type BtcWallet,
 } from "@/lib/bitcoinWallet";
 import {
   generateCommitmentText,
@@ -48,9 +49,10 @@ import {
 
 export default function CryptoLiquidity() {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
-  const [wallet, setWallet] = useState(getBtcWallet());
-  const [pool, setPool] = useState(getBtcPool());
+  const { user, profile, refreshProfile } = useAuth();
+  const [wallet, setWallet] = useState<BtcWallet | null>(null);
+  const [pool, setPool] = useState<BtcLiquidityPool>(emptyPool());
+  const [ledger, setLedger] = useState<BtcLedgerEntry[]>([]);
   const [buyFcfa, setBuyFcfa] = useState("50000");
   const [stakeSatsInput, setStakeSatsInput] = useState("10000");
   const [loading, setLoading] = useState(false);
@@ -59,63 +61,73 @@ export default function CryptoLiquidity() {
   const [myCommitments, setMyCommitments] = useState<CommitmentRecord[]>([]);
   const { data: btcMarket } = useBitcoinPrice();
 
-  useEffect(() => {
-    syncBtcPool().then(setPool);
-    if (user?.id) {
-      loadBtcWallet(user.id).then((w) => w && setWallet(w));
-      fetchGroupCommitments("").then(() => undefined);
-      supabaseCommitments(user.id).then(setMyCommitments);
-    }
-  }, [user?.id]);
-
-  async function supabaseCommitments(profileId: string) {
-    const { data } = await supabase
-      .from("bitcoin_commitments")
-      .select("*")
-      .eq("profile_id", profileId)
-      .order("created_at", { ascending: false })
-      .limit(5);
-    return (data ?? []) as CommitmentRecord[];
-  }
-
-  const refreshPool = async () => {
-    const p = await syncBtcPool();
+  const reload = async (profileId: string) => {
+    const [p, w, l, c] = await Promise.all([
+      fetchBtcPool(),
+      fetchBtcWallet(profileId),
+      fetchLedger(profileId),
+      fetchMyCommitments(profileId),
+    ]);
     setPool(p);
-    await persistBtcPool(p);
+    setWallet(w);
+    setLedger(l);
+    setMyCommitments(c);
   };
 
+  useEffect(() => {
+    fetchBtcPool().then(setPool).catch(() => setPool(emptyPool()));
+    if (user?.id) void reload(user.id);
+  }, [user?.id]);
+
   const handleConnect = async () => {
-    const w = await connectAndPersistWallet(user?.id);
-    setWallet(w);
-    toast.success("Portefeuille membre lié — registre Supabase synchronisé");
+    if (!user) {
+      toast.error("Connectez-vous pour lier votre registre Bitcoin");
+      navigate("/connexion");
+      return;
+    }
+    try {
+      const w = await linkBtcWallet();
+      setWallet(w);
+      toast.success("Registre membre lié — opérations via Supabase (btc_ledger)");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Échec liaison registre");
+    }
   };
 
   const handleBuySats = async () => {
-    if (!wallet || !btcMarket) return;
+    if (!user || !btcMarket) return;
+    setLoading(true);
     try {
       const fcfa = parseFloat(buyFcfa);
-      const rate = fcfaToSatsRate(btcMarket.priceXof);
-      const w = buySatsWithFcfa({ ...wallet }, fcfa, rate, btcMarket.priceXof);
-      setWallet({ ...w });
-      await refreshPool();
-      if (user?.id) await persistBtcWallet(user.id, w);
-      toast.success(`${fcfa.toLocaleString("fr-FR")} FCFA → sats au cours CoinGecko`);
+      if (!fcfa || fcfa < 100) throw new Error("Montant minimum 100 FCFA");
+      const idempotencyKey = `buy-${user.id}-${Date.now()}`;
+      const result = await buyBtcWithFcfa(fcfa, btcMarket.priceXof, idempotencyKey);
+      await refreshProfile();
+      await reload(user.id);
+      setPool(await fetchBtcPool());
+      toast.success(`${result.fcfa.toLocaleString("fr-FR")} FCFA → ${result.sats.toLocaleString("fr-FR")} sats (ledger)`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erreur achat sats");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleStake = async () => {
-    if (!wallet || !btcMarket) return;
+    if (!user || !btcMarket || !wallet) return;
+    setLoading(true);
     try {
       const sats = parseInt(stakeSatsInput, 10);
-      const w = stakeSats({ ...wallet }, sats, btcMarket.priceXof);
-      setWallet({ ...w });
-      await refreshPool();
-      if (user?.id) await persistBtcWallet(user.id, w);
-      toast.success(`${sats.toLocaleString("fr-FR")} sats ajoutés au trésor collectif`);
+      if (!sats || sats <= 0) throw new Error("Montant sats invalide");
+      const idempotencyKey = `stake-${user.id}-${Date.now()}`;
+      const result = await stakeBtcSats(sats, btcMarket.priceXof, idempotencyKey);
+      await reload(user.id);
+      setPool(await fetchBtcPool());
+      toast.success(`${result.staked_sats.toLocaleString("fr-FR")} sats stakés · ≈ ${formatFCFA(result.fcfa_equiv)}`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erreur stake");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -130,7 +142,7 @@ export default function CryptoLiquidity() {
       const valid = await verifyStoredCommitment(hash, signature, pubkeyHint);
       if (!valid) throw new Error("Vérification secp256k1 échouée");
 
-      setProofId(`${hash.slice(0, 18)}… · vérifié ✓`);
+      setProofId(`${hash.slice(0, 18)}… · vérifié`);
       await recordBitcoinCommitment({
         commitment_text: text,
         document_hash: hash,
@@ -139,8 +151,8 @@ export default function CryptoLiquidity() {
         profile_id: user.id,
         amount_fcfa: pool.tvlFcfa,
       });
-      setMyCommitments(await supabaseCommitments(user.id));
-      toast.success("Engagement secp256k1 signé et vérifié");
+      setMyCommitments(await fetchMyCommitments(user.id));
+      toast.success("Engagement secp256k1 signé et enregistré");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Échec signature");
     } finally {
@@ -155,9 +167,14 @@ export default function CryptoLiquidity() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const previewSats =
+    btcMarket && buyFcfa
+      ? Math.floor(parseFloat(buyFcfa || "0") * fcfaToSatsRate(btcMarket.priceXof))
+      : 0;
+
   return (
-    <div className="animate-fade-in pb-6 min-h-screen max-w-3xl mx-auto w-full">
-      <TopBar title="Trésor Bitcoin" onBack={() => navigate("/")} />
+    <div className="animate-fade-in pb-6 min-h-screen w-full max-w-5xl mx-auto">
+      <TopBar title="Trésor Bitcoin" onBack={() => navigate(user ? "/home" : "/")} />
 
       <div className="px-4 space-y-4">
         <div className="rounded-xl border border-amber-200/60 bg-amber-50/40 p-3 flex gap-2">
@@ -170,11 +187,12 @@ export default function CryptoLiquidity() {
         <div className="rounded-2xl tc-gradient-brand text-white p-5 tc-shadow-green">
           <div className="flex items-center gap-2 mb-3">
             <Bitcoin className="w-5 h-5" />
-            <span className="text-xs font-medium opacity-90">Trésor collectif indexé BTC</span>
+            <span className="text-xs font-medium opacity-90">Trésor · Lightning + on-chain + registre</span>
           </div>
           <p className="text-2xl font-bold">{formatFCFA(pool.tvlFcfa)}</p>
           <p className="text-[11px] opacity-75 mt-1">
-            {pool.btcReserve.toFixed(6)} BTC (registre) · {pool.apy}% APY · {pool.contributors} contributeurs
+            {pool.btcReserve.toFixed(6)} BTC comptable · {pool.apy}% APY · {pool.contributors} contributeurs
+            {(pool.lnSats ?? 0) > 0 && ` · ${(pool.lnSats ?? 0).toLocaleString("fr-FR")} sats LN`}
           </p>
           {btcMarket && (
             <p className="text-xs opacity-90 mt-2">
@@ -183,18 +201,31 @@ export default function CryptoLiquidity() {
           )}
         </div>
 
-        <BitcoinTreasuryOnChain pool={pool} onSynced={() => void refreshPool()} />
+        <LightningDepositCard
+          pool={pool}
+          profileId={user?.id}
+          onPaid={() => void fetchBtcPool().then(setPool)}
+        />
 
-        {!wallet ? (
+        <BitcoinTreasuryOnChain pool={pool} onSynced={() => void fetchBtcPool().then(setPool)} />
+
+        {!user ? (
+          <div className="rounded-2xl border border-border bg-card p-4 text-center">
+            <p className="text-sm text-muted-foreground mb-3">Connectez-vous pour acheter des sats et staker dans le trésor.</p>
+            <button type="button" onClick={() => navigate("/connexion")} className="px-4 py-2 rounded-xl text-sm font-semibold text-white tc-gradient-brand">
+              Se connecter
+            </button>
+          </div>
+        ) : !wallet ? (
           <button
             type="button"
             onClick={handleConnect}
             className="w-full py-4 rounded-2xl border-2 border-dashed border-amber-400/50 flex flex-col items-center gap-2 hover:bg-amber-50 transition-colors"
           >
             <Wallet className="w-8 h-8 text-amber-600" />
-            <span className="text-sm font-semibold">Lier mon portefeuille membre</span>
+            <span className="text-sm font-semibold">Lier mon registre membre</span>
             <span className="text-[10px] text-muted-foreground text-center px-4">
-              Registre interne synchronisé Supabase · conversions au cours live
+              Identifiant interne · opérations journalisées dans btc_ledger
             </span>
           </button>
         ) : (
@@ -216,10 +247,13 @@ export default function CryptoLiquidity() {
                 <p className="text-sm font-bold">{wallet.stakedSats.toLocaleString("fr-FR")}</p>
               </div>
             </div>
+            <p className="text-[10px] text-muted-foreground mt-2 text-center">
+              Solde FCFA disponible : {formatFCFA(profile?.wallet_balance ?? 0)}
+            </p>
           </div>
         )}
 
-        {wallet && btcMarket && (
+        {user && wallet && btcMarket && (
           <>
             <div className="rounded-2xl border border-border bg-card p-4">
               <div className="flex items-center gap-2 mb-3">
@@ -230,12 +264,16 @@ export default function CryptoLiquidity() {
                 type="number"
                 value={buyFcfa}
                 onChange={(e) => setBuyFcfa(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm mb-3"
+                className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm mb-2"
               />
+              {previewSats > 0 && (
+                <p className="text-[10px] text-muted-foreground mb-3">≈ {previewSats.toLocaleString("fr-FR")} sats · débit portefeuille FCFA</p>
+              )}
               <button
                 type="button"
+                disabled={loading}
                 onClick={handleBuySats}
-                className="w-full py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-amber-500 to-orange-500"
+                className="w-full py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-amber-500 to-orange-500 disabled:opacity-50"
               >
                 Acheter au cours {formatFCFA(btcMarket.priceXof)}/BTC
               </button>
@@ -252,7 +290,12 @@ export default function CryptoLiquidity() {
                 onChange={(e) => setStakeSatsInput(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm mb-3"
               />
-              <button type="button" onClick={handleStake} className="w-full py-2.5 rounded-xl text-sm font-semibold text-white tc-gradient-brand">
+              <button
+                type="button"
+                disabled={loading}
+                onClick={handleStake}
+                className="w-full py-2.5 rounded-xl text-sm font-semibold text-white tc-gradient-brand disabled:opacity-50"
+              >
                 Staker · {pool.apy}% APY estimé
               </button>
             </div>
@@ -260,10 +303,10 @@ export default function CryptoLiquidity() {
             <div className="rounded-2xl border border-border bg-card p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Shield className="w-4 h-4 text-[hsl(var(--tc-brand))]" />
-                <span className="text-sm font-semibold">Preuve secp256k1 (courbe Bitcoin)</span>
+                <span className="text-sm font-semibold">Engagement ECDSA (secp256k1)</span>
               </div>
               <p className="text-[11px] text-muted-foreground mb-3">
-                Signature cryptographique vérifiable — ancrage OpenTimestamps prévu en phase 2 prod.
+                Courbe secp256k1 (famille Bitcoin) · enregistré dans bitcoin_commitments.
               </p>
               <button
                 type="button"
@@ -285,6 +328,20 @@ export default function CryptoLiquidity() {
                 </ul>
               )}
             </div>
+
+            {ledger.length > 0 && (
+              <div className="rounded-2xl border border-border bg-card p-4">
+                <p className="text-xs font-semibold mb-2">Journal btc_ledger</p>
+                <ul className="space-y-2">
+                  {ledger.map((row) => (
+                    <li key={row.id} className="flex justify-between text-[10px] border-b border-border/50 pb-1.5">
+                      <span className="text-muted-foreground">{row.entry_type}</span>
+                      <span className="font-mono">+{row.sats_delta.toLocaleString("fr-FR")} sats</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </>
         )}
       </div>

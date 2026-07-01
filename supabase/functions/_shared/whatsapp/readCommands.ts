@@ -2,15 +2,17 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { WhatsAppCommandContext, WhatsAppCommandResult } from "./types.ts";
 import { formatBtc, formatFCFA } from "./utils.ts";
 import { resolveUserId, ensureProfileFromPhone, syncPhoneOnProfile } from "./profile.ts";
+import { createLnbitsInvoice, isLnbitsConfigured } from "../lnbits/client.ts";
 
 async function fetchBtcPool(supabase: SupabaseClient) {
-  const fallback = { tvlFcfa: 2_500_000, btcReserve: 0.042, satsLiquid: 4_200_000, apy: 8.5 };
+  const fallback = { tvlFcfa: 0, btcReserve: 0, satsLiquid: 0, lnSats: 0, apy: 0 };
   const { data } = await supabase.from("btc_treasury_pool").select("*").eq("id", 1).maybeSingle();
   if (!data) return fallback;
   return {
     tvlFcfa: Number(data.tvl_fcfa),
     btcReserve: Number(data.btc_reserve),
     satsLiquid: Number(data.sats_liquid),
+    lnSats: Number(data.ln_sats ?? 0),
     apy: Number(data.apy),
   };
 }
@@ -120,9 +122,55 @@ export async function handleReadCommand(
         `TVL : *${formatFCFA(pool.tvlFcfa)}*`,
         `Réserve BTC : *${pool.btcReserve.toFixed(4)} BTC*`,
         `Sats liquides : *${pool.satsLiquid.toLocaleString("fr-FR")}*`,
+        `Lightning (LN) : *${pool.lnSats.toLocaleString("fr-FR")}* sats`,
         `APY : *${pool.apy}%*`,
+        "",
+        `Dépôt LN : ${origin}/crypto`,
       ].join("\n"),
     };
+  }
+
+  if (cmd === "invoice" || cmd === "ln") {
+    if (!isLnbitsConfigured()) {
+      return { success: false, reply: "⚡ LNbits non configuré sur le serveur." };
+    }
+    const amount = Math.floor(Number(args[0] ?? "500"));
+    if (!amount || amount < 1) {
+      return { success: false, reply: "Usage : *INVOICE 500* (montant en sats)" };
+    }
+    try {
+      const inv = await createLnbitsInvoice(amount, `TontineChain WhatsApp ${userId.slice(0, 8)}`);
+      const bolt11 = inv.payment_request ?? inv.bolt11;
+      await supabase.from("btc_ln_payments").upsert(
+        {
+          payment_hash: inv.payment_hash,
+          bolt11,
+          amount_msat: amount * 1000,
+          sats: amount,
+          status: "pending",
+          purpose: "treasury_deposit",
+          profile_id: userId,
+          memo: "WhatsApp invoice",
+        },
+        { onConflict: "payment_hash" },
+      );
+      return {
+        success: true,
+        reply: [
+          "⚡ *Facture Lightning*",
+          `Montant : *${amount.toLocaleString("fr-FR")} sats*`,
+          "",
+          bolt11.length > 180 ? `${bolt11.slice(0, 180)}…` : bolt11,
+          "",
+          `Payez avec Phoenix / WoS puis ouvrez : ${origin}/crypto`,
+        ].join("\n"),
+      };
+    } catch (e) {
+      return {
+        success: false,
+        reply: `❌ Facture LN : ${e instanceof Error ? e.message : "erreur"}`,
+      };
+    }
   }
 
   if (cmd === "bitcoin" || cmd === "btc") {

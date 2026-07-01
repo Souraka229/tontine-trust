@@ -1,83 +1,79 @@
-import { ArrowRight } from "lucide-react";
-
-interface LandingHeroProps {
-  email: string;
-  onEmailChange: (v: string) => void;
-  onGetStarted: () => void;
+import { useNavigate } from "react-router-dom";
+import { ArrowRight, Bitcoin, MessageCircle, Search } from "lucide-react";
+interface Stat {
+  value: string;
+  label: string;
 }
 
-export default function LandingHero({ email, onEmailChange, onGetStarted }: LandingHeroProps) {
+interface Props {
+  stats: Stat[];
+}
+
+export default function LandingHero({ stats }: Props) {
+  const navigate = useNavigate();
+
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-[#f7f5fc] via-[#faf9fd] to-white">
-      {/* Formes décoratives type Letspay */}
-      <div className="pointer-events-none absolute -right-20 top-20 h-72 w-72 rounded-full bg-violet-200/30 blur-3xl" aria-hidden />
-      <div className="pointer-events-none absolute left-10 bottom-32 h-48 w-48 rounded-full bg-blue-100/40 blur-2xl" aria-hidden />
-      <div className="pointer-events-none absolute right-1/3 top-1/2 h-24 w-24 rotate-12 rounded-3xl border border-violet-100/80 bg-white/40" aria-hidden />
-      <div className="pointer-events-none absolute right-[18%] top-[28%] text-[120px] font-black text-violet-100/50 select-none leading-none" aria-hidden>
-        ₣
-      </div>
+    <section className="tc-mesh-hero relative overflow-hidden">
+      <div className="absolute inset-0 tc-grid-fine opacity-[0.35] pointer-events-none" />
+      <div className="absolute top-1/4 -left-32 w-96 h-96 rounded-full bg-[hsl(var(--tc-violet)/0.12)] blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-80 h-80 rounded-full bg-[hsl(var(--tc-bitcoin)/0.1)] blur-3xl pointer-events-none" />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-12 pb-16 lg:pt-20 lg:pb-24">
-        <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
-          {/* Colonne gauche — copy */}
-          <div className="text-center lg:text-left order-2 lg:order-1">
-            <h1 className="text-[2.5rem] sm:text-5xl lg:text-[3.4rem] font-extrabold leading-[1.05] tracking-tight text-slate-900">
-              Cotisez vite.
-              <br />
-              Épargnez malin.
-            </h1>
-            <p className="mt-4 text-xl sm:text-2xl font-bold text-slate-800">
-              Avec{" "}
-              <span className="text-[hsl(266_62%_33%)]">TONTINECHAIN</span>
-            </p>
-            <p className="mt-5 text-sm sm:text-base text-slate-500 max-w-md mx-auto lg:mx-0 leading-relaxed">
-              Le portefeuille digital tout-en-un pour vos tontines : cotisez en FCFA,
-              sécurisez en Bitcoin et pilotez tout depuis WhatsApp.
-            </p>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-16 pb-20 sm:pt-24 sm:pb-28 relative">
+        <div className="max-w-3xl mx-auto text-center animate-slide-up">
+          <span className="tc-badge tc-badge-btc mb-6">
+            <Bitcoin className="w-3.5 h-3.5" />
+            Tontine indexée Bitcoin · Bénin · UEMOA
+          </span>
 
-            <form
-              className="mt-8 flex flex-col sm:flex-row gap-0 max-w-md mx-auto lg:mx-0 rounded-full bg-white border border-slate-200 shadow-[0_8px_30px_rgba(64,25,109,0.08)] p-1.5 sm:p-1"
-              onSubmit={(e) => {
-                e.preventDefault();
-                onGetStarted();
-              }}
-            >
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => onEmailChange(e.target.value)}
-                placeholder="Votre e-mail"
-                className="flex-1 min-w-0 px-4 sm:px-5 py-3 sm:py-3.5 text-sm bg-transparent outline-none placeholder:text-slate-400 rounded-full"
-              />
-              <button
-                type="submit"
-                className="inline-flex items-center justify-center gap-2 shrink-0 px-6 py-3 sm:py-3.5 rounded-full text-sm font-bold text-white tc-gradient-brand tc-shadow-green hover:opacity-95 transition-opacity"
-              >
-                Commencer <ArrowRight className="w-4 h-4" />
-              </button>
-            </form>
+          <h1 className="text-[2.75rem] sm:text-[3.5rem] lg:text-[4rem] font-bold leading-[1.05] tracking-[-0.04em] text-[hsl(var(--tc-ink))]">
+            La tontine
+            <br />
+            <span className="tc-text-gradient">indexée sur Bitcoin</span>
+          </h1>
 
-            <div className="mt-10 flex flex-wrap items-center justify-center lg:justify-start gap-6 sm:gap-8 opacity-70">
-              <img src="/logos/kkiapay.svg" alt="Kkiapay" className="h-7 sm:h-8 object-contain" />
-              <img src="/logos/bitcoin.svg" alt="Bitcoin" className="h-8 sm:h-9 object-contain" />
-              <img src="/logos/whatsapp.svg" alt="WhatsApp" className="h-8 sm:h-9 object-contain" />
-            </div>
+          <p className="mt-6 text-base sm:text-lg text-[hsl(var(--tc-muted))] max-w-xl mx-auto leading-relaxed">
+            Cotisations FCFA via Mobile Money, trésor collectif en satoshis, registre PostgreSQL
+            vérifiable — explorez librement, inscrivez-vous pour cotiser.
+          </p>
+
+          <div className="mt-9 flex flex-col sm:flex-row gap-3 justify-center">
+            <button type="button" onClick={() => navigate("/rechercher")} className="tc-btn-primary gap-2">
+              <Search className="w-4 h-4" />
+              Explorer les groupes
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            <button type="button" onClick={() => navigate("/crypto")} className="tc-btn-bitcoin gap-2">
+              <Bitcoin className="w-5 h-5" />
+              Voir le trésor
+            </button>
           </div>
 
-          {/* Colonne droite — visuel 3D */}
-          <div className="relative order-1 lg:order-2 flex justify-center lg:justify-end">
-            <div className="relative w-full max-w-[420px] lg:max-w-none">
-              <img
-                src="/images/hero-3d.png"
-                alt="Application TontineChain sur mobile avec Bitcoin et WhatsApp"
-                className="w-full h-auto max-h-[480px] object-contain object-center drop-shadow-[0_30px_60px_rgba(64,25,109,0.15)]"
-                width={640}
-                height={640}
-                fetchPriority="high"
-              />
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => navigate("/whatsapp?open=1&msg=AIDE")}
+            className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-[#128C7E] hover:underline"
+          >
+            <MessageCircle className="w-4 h-4" />
+            Bot WhatsApp (optionnel)
+          </button>
         </div>
+
+        <dl className="mt-16 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto">
+          {stats.map((s) => (
+            <div key={s.label} className="tc-card-elevated px-4 py-4 text-center">
+              <p className="text-lg sm:text-xl font-bold tracking-tight text-[hsl(var(--tc-ink))] truncate">
+                {s.value}
+              </p>
+              <p className="text-[10px] sm:text-xs font-medium text-[hsl(var(--tc-muted))] mt-1 uppercase tracking-wide">
+                {s.label}
+              </p>
+            </div>
+          ))}
+        </dl>
+
+        <p className="text-center text-[11px] text-[hsl(var(--tc-muted))] mt-4 max-w-md mx-auto">
+          Stats live Supabase · cours CoinGecko · pas de données fictives
+        </p>
       </div>
     </section>
   );

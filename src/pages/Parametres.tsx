@@ -1,3 +1,15 @@
+import type { LucideIcon } from "lucide-react";
+import {
+  Sun,
+  Moon,
+  Lock,
+  Fingerprint,
+  KeyRound,
+  Globe,
+  Phone,
+  Bell,
+  MessageSquare,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/layout/TopBar";
@@ -6,6 +18,26 @@ import { useAuth } from "@/hooks/useAuth";
 import { ChevronRight, Trash2, Users } from "lucide-react";
 import { clearDemoAccounts, getDemoAccounts, removeDemoAccount, type DemoAccountRecord } from "@/lib/demoMultiAccount";
 import { toast } from "sonner";
+
+const MOMO_LOGOS = [
+  { src: "/logos/mtn-momo.svg", alt: "MTN MoMo" },
+  { src: "/logos/moov-money.svg", alt: "Moov Money" },
+  { src: "/logos/orange-money.svg", alt: "Orange Money" },
+  { src: "/logos/kkiapay.svg", alt: "Kkiapay" },
+] as const;
+
+type SettingItem = {
+  icon: LucideIcon;
+  iconBg: string;
+  iconColor: string;
+  name: string;
+  sub?: string;
+  toggle?: boolean;
+  checked?: boolean;
+  onToggle?: () => void;
+  arrow?: boolean;
+  logos?: boolean;
+};
 
 export default function Parametres() {
   const navigate = useNavigate();
@@ -19,13 +51,16 @@ export default function Parametres() {
     refreshDemo();
   }, [refreshDemo]);
 
-  const sections = [
+  const ThemeIcon = theme === "dark" ? Moon : Sun;
+
+  const sections: { title: string; items: SettingItem[] }[] = [
     {
       title: "Écran & Affichage",
       items: [
         {
-          icon: "☀️",
+          icon: ThemeIcon,
           iconBg: "bg-[hsla(258,90%,66%,0.12)]",
+          iconColor: "text-[hsl(var(--tc-brand))]",
           name: "Mode Sombre / Clair",
           sub: "Basculer le thème de l'app",
           toggle: true,
@@ -37,44 +72,107 @@ export default function Parametres() {
     {
       title: "Sécurité",
       items: [
-        { icon: "🔐", iconBg: "bg-[hsla(160,84%,39%,0.12)]", name: "Modifier le PIN", sub: "Dernier changement : il y a 30j", arrow: true },
-        { icon: "👆", iconBg: "bg-[hsla(217,91%,60%,0.12)]", name: "Biométrie", sub: "Empreinte / Face ID", toggle: true, checked: false },
-        { icon: "🔑", iconBg: "bg-[hsla(258,90%,66%,0.12)]", name: "Contacts de confiance", sub: "2 contacts configurés", arrow: true },
+        {
+          icon: Lock,
+          iconBg: "bg-[hsla(160,84%,39%,0.12)]",
+          iconColor: "text-[hsl(var(--tc-green))]",
+          name: "Modifier le PIN",
+          sub: "Dernier changement : il y a 30j",
+          arrow: true,
+        },
+        {
+          icon: Fingerprint,
+          iconBg: "bg-[hsla(217,91%,60%,0.12)]",
+          iconColor: "text-blue-600",
+          name: "Biométrie",
+          sub: "Empreinte / Face ID",
+          toggle: true,
+          checked: false,
+        },
+        {
+          icon: KeyRound,
+          iconBg: "bg-[hsla(258,90%,66%,0.12)]",
+          iconColor: "text-[hsl(var(--tc-brand))]",
+          name: "Contacts de confiance",
+          sub: "2 contacts configurés",
+          arrow: true,
+        },
       ],
     },
     {
       title: "Comptes",
       items: [
-        { icon: "📱", iconBg: "bg-[hsla(38,92%,50%,0.12)]", name: "Portefeuilles liés", sub: "MTN MoMo · Moov Money · Celtiis Cash", arrow: true },
-        { icon: "🌍", iconBg: "bg-[hsla(160,84%,39%,0.12)]", name: "Langue", sub: "Français", arrow: true },
-        { icon: "📞", iconBg: "bg-[hsla(217,91%,60%,0.12)]", name: "Mode USSD", sub: "Raccourci *784#", toggle: true, checked: false },
+        {
+          icon: Phone,
+          iconBg: "bg-[hsla(38,92%,50%,0.12)]",
+          iconColor: "text-amber-600",
+          name: "Portefeuilles liés",
+          sub: "Mobile Money via Kkiapay",
+          arrow: true,
+          logos: true,
+        },
+        {
+          icon: Globe,
+          iconBg: "bg-[hsla(160,84%,39%,0.12)]",
+          iconColor: "text-[hsl(var(--tc-green))]",
+          name: "Langue",
+          sub: "Français",
+          arrow: true,
+        },
+        {
+          icon: Phone,
+          iconBg: "bg-[hsla(217,91%,60%,0.12)]",
+          iconColor: "text-blue-600",
+          name: "Mode USSD",
+          sub: "Raccourci *784#",
+          toggle: true,
+          checked: false,
+        },
       ],
     },
     {
       title: "Notifications",
       items: [
-        { icon: "🔔", iconBg: "bg-[hsla(38,92%,50%,0.12)]", name: "Push notifications", toggle: true, checked: true },
-        { icon: "💬", iconBg: "bg-[hsla(160,84%,39%,0.12)]", name: "Alertes SMS", toggle: true, checked: true },
+        {
+          icon: Bell,
+          iconBg: "bg-[hsla(38,92%,50%,0.12)]",
+          iconColor: "text-amber-600",
+          name: "Push notifications",
+          toggle: true,
+          checked: true,
+        },
+        {
+          icon: MessageSquare,
+          iconBg: "bg-[hsla(160,84%,39%,0.12)]",
+          iconColor: "text-[hsl(var(--tc-green))]",
+          name: "Alertes SMS",
+          toggle: true,
+          checked: true,
+        },
       ],
     },
   ];
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in pb-8 md:pb-10">
       <TopBar title="Paramètres" backTo="/profil" backLabel="Profil" />
-      <div className="pb-6">
+
+      <div className="md:pt-2">
         {demoAccounts.length > 0 && (
-          <div className="mx-4 mt-3 mb-2 rounded-2xl border border-[hsla(160,35%,42%,0.2)] bg-[hsla(160,22%,96%,0.5)] dark:bg-[hsla(160,12%,14%,0.4)] p-3">
+          <div className="mx-4 md:mx-0 mt-3 mb-2 rounded-2xl border border-[hsla(160,35%,42%,0.2)] bg-[hsla(160,22%,96%,0.5)] dark:bg-[hsla(160,12%,14%,0.4)] p-3 md:p-4">
             <div className="flex items-center gap-2 mb-2">
               <Users className="w-4 h-4 text-[hsl(var(--tc-green))]" />
               <h3 className="text-xs font-semibold">Comptes démo (cet appareil)</h3>
             </div>
             <p className="text-[10px] text-muted-foreground mb-2 leading-relaxed">
-              Utilisés pour la connexion rapide sur l’écran Connexion. Données locales uniquement.
+              Utilisés pour la connexion rapide sur l'écran Connexion. Données locales uniquement.
             </p>
             <ul className="space-y-1.5 mb-2">
               {demoAccounts.map((a) => (
-                <li key={a.email} className="flex items-center justify-between gap-2 text-xs bg-card/80 rounded-lg px-2 py-1.5 border border-border/60">
+                <li
+                  key={a.email}
+                  className="flex items-center justify-between gap-2 text-xs bg-card/80 rounded-lg px-2 py-1.5 border border-border/60"
+                >
                   <span className="truncate">
                     <span className="font-medium">{a.label}</span>
                     <span className="text-muted-foreground block truncate text-[10px]">{a.email}</span>
@@ -99,7 +197,7 @@ export default function Parametres() {
               onClick={() => {
                 clearDemoAccounts();
                 refreshDemo();
-                toast.success("Tous les comptes démo ont été effacés de l’appareil");
+                toast.success("Tous les comptes démo ont été effacés de l'appareil");
               }}
               className="text-[10px] font-medium text-[hsl(var(--tc-red))] underline"
             >
@@ -108,40 +206,67 @@ export default function Parametres() {
           </div>
         )}
 
-        {sections.map((section) => (
-          <div key={section.title}>
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 pt-3 pb-1.5">
-              {section.title}
-            </h3>
-            {section.items.map((item) => (
-              <div
-                key={item.name}
-                className="flex items-center justify-between px-4 py-3 border-b border-border cursor-pointer hover:bg-accent/50 transition-colors"
-                onClick={() => {
-                  if (item.onToggle) item.onToggle();
-                }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${item.iconBg}`}>
-                    {item.icon}
+        <div className="md:grid md:grid-cols-2 md:gap-6 md:px-0">
+          {sections.map((section) => (
+            <div key={section.title} className="md:rounded-2xl md:border md:border-border md:bg-card/40 md:overflow-hidden">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 md:px-5 pt-3 pb-1.5">
+                {section.title}
+              </h3>
+              {section.items.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div
+                    key={item.name}
+                    className="flex items-center justify-between px-4 md:px-5 py-3 border-b border-border cursor-pointer hover:bg-accent/50 transition-colors last:border-b-0"
+                    onClick={() => {
+                      if (item.onToggle) item.onToggle();
+                    }}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${item.iconBg}`}
+                      >
+                        <Icon className={`w-4 h-4 ${item.iconColor}`} strokeWidth={2} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">{item.name}</p>
+                        {item.sub && <p className="text-[10px] text-muted-foreground">{item.sub}</p>}
+                        {item.logos && (
+                          <div className="flex flex-wrap items-center gap-2 mt-2">
+                            {MOMO_LOGOS.map((logo) => (
+                              <img
+                                key={logo.alt}
+                                src={logo.src}
+                                alt={logo.alt}
+                                className="h-6 w-auto object-contain rounded-md border border-border/50 bg-white px-1.5 py-0.5"
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {item.toggle && (
+                      <div
+                        className={`w-10 h-6 rounded-full flex items-center px-0.5 transition-colors shrink-0 ml-2 ${
+                          item.checked ? "bg-[hsl(var(--tc-green))]" : "bg-muted"
+                        }`}
+                      >
+                        <div
+                          className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                            item.checked ? "translate-x-4" : ""
+                          }`}
+                        />
+                      </div>
+                    )}
+                    {item.arrow && <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 ml-2" />}
                   </div>
-                  <div>
-                    <p className="text-sm font-medium">{item.name}</p>
-                    {item.sub && <p className="text-[10px] text-muted-foreground">{item.sub}</p>}
-                  </div>
-                </div>
-                {item.toggle && (
-                  <div className={`w-10 h-6 rounded-full flex items-center px-0.5 transition-colors ${item.checked ? "bg-[hsl(var(--tc-green))]" : "bg-muted"}`}>
-                    <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${item.checked ? "translate-x-4" : ""}`} />
-                  </div>
-                )}
-                {item.arrow && <ChevronRight className="w-4 h-4 text-muted-foreground" />}
-              </div>
-            ))}
-          </div>
-        ))}
+                );
+              })}
+            </div>
+          ))}
+        </div>
 
-        <div className="px-4 pt-4 space-y-2">
+        <div className="px-4 md:px-0 pt-6 md:max-w-md space-y-2">
           <button
             type="button"
             onClick={async () => {

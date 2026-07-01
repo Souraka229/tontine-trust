@@ -1,13 +1,13 @@
-/** Intégrations réellement branchées dans le projet */
+const CRYPTO = [
+  { src: "/logos/bitcoin.svg", alt: "Bitcoin" },
+  { src: "/logos/whatsapp.svg", alt: "WhatsApp" },
+];
+
 const PAYMENTS = [
   { src: "/logos/kkiapay.svg", alt: "Kkiapay" },
   { src: "/logos/mtn-momo.svg", alt: "MTN MoMo" },
   { src: "/logos/moov-money.svg", alt: "Moov Money" },
-];
-
-const CRYPTO = [
-  { src: "/logos/bitcoin.svg", alt: "Bitcoin" },
-  { src: "/logos/whatsapp.svg", alt: "WhatsApp" },
+  { src: "/logos/orange-money.svg", alt: "Orange Money" },
 ];
 
 export default function PartnerLogos() {

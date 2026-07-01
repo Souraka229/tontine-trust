@@ -84,7 +84,7 @@ export async function executeWhatsAppCommand(
   if (userId) {
     const readResult = await handleReadCommand(readCmd, ctx, userId);
     if (readResult) return readResult;
-  } else if (["solde", "score", "groupes", "groupe", "cotiser", "liquidity", "crypto", "bitcoin", "btc", "notifs", "notifications"].includes(readCmd)) {
+  } else if (["solde", "score", "groupes", "groupe", "cotiser", "liquidity", "crypto", "bitcoin", "btc", "notifs", "notifications", "invoice", "ln"].includes(readCmd)) {
     return { success: false, reply: MSG_NOT_LINKED };
   }
 

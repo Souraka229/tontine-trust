@@ -52,11 +52,11 @@ describe("bitcoinTreasury", () => {
     expect(getTreasuryExplorerUrl("bc1qabc")).toContain("bc1qabc");
   });
 
-  it("décrit le rôle du trésor sans promesses multisig", () => {
+  it("décrit le rôle du trésor avec garde collective et LNbits", () => {
     const text = describeTreasuryRole();
-    expect(text).toMatch(/mempool\.space/);
-    expect(text).toMatch(/secp256k1/);
-    expect(text).not.toMatch(/multisig/i);
+    expect(text).toMatch(/LNbits|Lightning/i);
+    expect(text).toMatch(/btc_ledger/);
+    expect(text).toMatch(/garde collective|3\/5/i);
   });
 });
 

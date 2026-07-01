@@ -6,10 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { initPayment, payFromWallet } from "@/lib/kkiapay";
 import PhoneInput from "@/components/ui/PhoneInput";
 import InsuranceModal from "@/components/ui/InsuranceModal";
+import { DEMO_NSIA_POLICY_NUMBER } from "@/config/insurance";
 import { toast } from "sonner";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { isConvexConfigured } from "@/lib/convex";
 import {
   Loader2, Check, Users, Shield, Info, Lock,
   Coins, AlertTriangle, Calendar, ChevronRight
@@ -53,47 +51,15 @@ export default function Rejoindre() {
   const [phone, setPhone] = useState(profile?.phone || "");
   const [step, setStep] = useState<"info" | "guarantee" | "processing" | "done">("info");
   const [alreadyMember, setAlreadyMember] = useState(false);
-  const [guaranteeProof, setGuaranteeProof] = useState("");
+  const [guaranteeProof, setGuaranteeProof] = useState(DEMO_NSIA_POLICY_NUMBER);
 const [commitmentAccepted, setCommitmentAccepted] = useState(false);
   const [showInsuranceModal, setShowInsuranceModal] = useState(false);
-  const joinConvexGroup = useMutation(api.tontines.joinGroup);
-  const convexDetail = useQuery(
-    api.tontines.getGroupDetail,
-    isConvexConfigured && id && !id.includes("-") ? { groupId: id } : "skip"
-  );
 
   useEffect(() => {
     if (!id) return;
-    if (isConvexConfigured && !id.includes("-")) return;
-    
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
-
-    // En vrai, il faudrait utiliser une RPC ou vérifier le token pour contourner la RLS stricte,
-    // mais pour l'instant on essaie de charger le groupe.
     supabase.from("groups").select("*").eq("id", id).single()
       .then(({ data }) => setGroup(data as Group));
   }, [id]);
-
-  useEffect(() => {
-    if (!convexDetail) return;
-    setGroup({
-      id: convexDetail.group.id,
-      name: convexDetail.group.name,
-      initials: convexDetail.group.initials,
-      contribution_amount: convexDetail.group.contributionAmount,
-      frequency: convexDetail.group.frequency as Frequency,
-      members_count: convexDetail.group.membersCount,
-      max_members: convexDetail.group.maxMembers,
-      penalty_rate: convexDetail.group.penaltyRate,
-      guarantee_deposit: 0,
-      min_score: 0,
-      status: convexDetail.group.status as Group["status"],
-      total_rounds: convexDetail.group.totalRounds,
-      order_type: "random",
-    });
-    setAlreadyMember(convexDetail.isMember);
-  }, [convexDetail]);
 
   useEffect(() => {
     if (profile?.phone) setPhone(profile.phone);
@@ -126,7 +92,10 @@ const [commitmentAccepted, setCommitmentAccepted] = useState(false);
   const orderLabel = group.order_type === "manual" ? "Ordre manuel" : "Ordre tiré au sort";
 
   const handleJoin = async () => {
-    if (!user || !profile) return;
+    if (!user || !profile) {
+      navigate(`/connexion?next=${encodeURIComponent(`/rejoindre/${group.id}`)}`);
+      return;
+    }
 
     // Re-fetch live members count to prevent race condition
     const { data: freshGroup } = await supabase
@@ -210,19 +179,6 @@ const [commitmentAccepted, setCommitmentAccepted] = useState(false);
         return;
       }
 
-      if (isConvexConfigured && group.id && !group.id.includes("-")) {
-        await joinConvexGroup({
-          groupId: group.id,
-          coverageType: "life_insurance",
-          coverageReference: guaranteeProof.trim(),
-          commitmentAccepted,
-        });
-        await refreshProfile();
-        setStep("done");
-        return;
-      }
-
-      // Get live count for turn_order
       const { count } = await supabase
         .from("group_members")
         .select("id", { count: "exact", head: true })
@@ -279,7 +235,7 @@ const [commitmentAccepted, setCommitmentAccepted] = useState(false);
               type="text"
               value={guaranteeProof}
               onChange={(e) => setGuaranteeProof(e.target.value)}
-              placeholder="Ex : NSIA-VIE-12345"
+              placeholder={DEMO_NSIA_POLICY_NUMBER}
               className="w-full bg-card border border-border rounded-2xl px-4 py-3 text-sm outline-none focus:border-[hsl(var(--tc-green))] transition-colors"
             />
             <p className="text-[10px] text-[hsl(var(--tc-blue))] mt-3 leading-relaxed">

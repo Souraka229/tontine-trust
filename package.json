@@ -18,6 +18,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:all": "npm run test && npm run build",
+    "pitch:pdf": "python scripts/generate-pitch-pdf.py",
     "verify:local": "powershell -ExecutionPolicy Bypass -File ./scripts/verify-local.ps1"
   },
   "dependencies": {

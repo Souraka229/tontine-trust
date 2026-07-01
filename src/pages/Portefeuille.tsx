@@ -6,10 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { initPayment } from "@/lib/kkiapay";
 import PhoneInput from "@/components/ui/PhoneInput";
 import { toast } from "sonner";
-import { ArrowDownLeft, ArrowUpRight, Wallet, History, Check, Cpu, ShieldCheck, Lock } from "lucide-react";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { isConvexConfigured } from "@/lib/convex";
+import { ArrowDownLeft, ArrowUpRight, Wallet, History, Check, ShieldCheck, Lock } from "lucide-react";
 
 interface WalletTransaction {
   id: string;
@@ -31,10 +28,7 @@ export default function Portefeuille() {
   const [operator, setOperator] = useState("MTN");
   const [step, setStep] = useState<"form" | "processing" | "success">("form");
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
-  const [hasLate, setHasLate] = useState(false); // cotisations en retard
-  const convexWallet = useQuery(api.payments.walletAndTransactions, isConvexConfigured && user ? {} : "skip");
-  const createConvexDeposit = useMutation(api.payments.createWalletDeposit);
-  const requestConvexWithdrawal = useMutation(api.payments.requestWithdrawal);
+  const [hasLate, setHasLate] = useState(false);
 
   const fetchTransactions = useCallback(async () => {
     if (!user) return;
@@ -48,23 +42,7 @@ export default function Portefeuille() {
   }, [user]);
 
   useEffect(() => {
-    if (convexWallet) {
-      setTransactions(convexWallet.transactions.map((tx) => ({
-        id: tx.id,
-        name: tx.name,
-        amount: tx.amount,
-        type: tx.type,
-        kkiapay_status: tx.status,
-        provider: tx.provider,
-        created_at: new Date(tx.createdAt).toISOString(),
-      })));
-      setHasLate(convexWallet.hasLate);
-    }
-  }, [convexWallet]);
-
-  useEffect(() => {
     if (profile?.phone) setPhone(profile.phone);
-    if (isConvexConfigured) return;
     fetchTransactions();
     // Check for late contributions
     if (user) {
@@ -94,33 +72,6 @@ export default function Portefeuille() {
     }
 
     setStep("processing");
-
-    if (isConvexConfigured) {
-      try {
-        if (type === "deposit") {
-          const result = await createConvexDeposit({
-            amount: amt,
-            customerPhone: phone,
-            operator,
-          });
-          toast.success(
-            result.settledInDemoMode
-              ? "Dépôt crédité en mode démo."
-              : "Demande de dépôt envoyée. Vérification Kkiapay en cours."
-          );
-        } else {
-          await requestConvexWithdrawal({
-            amount: amt,
-            customerPhone: phone,
-          });
-        }
-        setStep("success");
-      } catch (error: unknown) {
-        toast.error(error instanceof Error ? error.message : "Opération impossible");
-        setStep("form");
-      }
-      return;
-    }
 
     if (type === "deposit") {
       // Dépôt : on utilise Kkiapay (simulé en test)
@@ -162,12 +113,10 @@ export default function Portefeuille() {
     return (
       <div className="flex flex-col min-h-screen items-center justify-center bg-background tc-grid-bg">
         <div className="relative w-16 h-16 mb-6">
-          <div className="absolute inset-0 rounded-full border-4 border-[hsl(var(--tc-green))] opacity-20 animate-ping" />
           <div className="absolute inset-0 rounded-full border-4 border-[hsl(var(--tc-green))] border-t-transparent animate-spin" />
-          <Cpu className="absolute inset-0 m-auto w-6 h-6 text-[hsl(var(--tc-green))]" />
         </div>
-        <p className="text-sm font-bold tracking-tight mb-1">VÉRIFICATION BLOCKCHAIN</p>
-        <p className="text-[10px] text-muted-foreground font-mono-tech animate-pulse">Hashing block {Math.random().toString(16).substring(2, 10)}...</p>
+        <p className="text-sm font-bold tracking-tight mb-1">Traitement en cours</p>
+        <p className="text-[10px] text-muted-foreground">Vérification du paiement Kkiapay</p>
       </div>
     );
   }
@@ -197,7 +146,7 @@ export default function Portefeuille() {
           <div className="flex items-start gap-2.5">
             <Lock className="w-4 h-4 text-[hsl(var(--tc-red))] mt-0.5 shrink-0" />
             <div>
-              <p className="text-xs font-bold text-[hsl(var(--tc-red))] mb-0.5">⚠️ Compte suspendu</p>
+              <p className="text-xs font-bold text-[hsl(var(--tc-red))] mb-0.5">Compte suspendu</p>
               <p className="text-[10px] text-muted-foreground leading-relaxed">
                 Vous avez des cotisations en <strong>retard</strong> dans un ou plusieurs groupes.
                 Les retraits sont bloqués jusqu’à régularisation. Cotisez maintenant pour débloquer.
@@ -222,7 +171,7 @@ export default function Portefeuille() {
               <Wallet className="w-3.5 h-3.5" />
             </div>
             <p className="text-3xl font-bold tabular-nums leading-tight">
-              {new Intl.NumberFormat("fr-FR").format(Number(convexWallet?.walletBalance ?? profile?.wallet_balance ?? 0))}
+              {new Intl.NumberFormat("fr-FR").format(Number(profile?.wallet_balance ?? 0))}
             </p>
             <p className="text-xs text-white/60 mt-1">FCFA</p>
           </div>
@@ -238,7 +187,7 @@ export default function Portefeuille() {
             Déposer
           </button>
           <button onClick={() => setTab("retrait")} className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${tab === "retrait" ? "bg-background shadow text-[hsl(var(--tc-amber))]" : "text-muted-foreground"}`}>
-            {hasLate ? "🔒 Retirer" : "Retirer"}
+            {hasLate ? "Retirer (bloqué)" : "Retirer"}
           </button>
         </div>
 
@@ -311,7 +260,7 @@ export default function Portefeuille() {
             </div>
 
             <button
-              onClick={() => handleTransaction(tab)}
+              onClick={() => handleTransaction(tab === "depot" ? "deposit" : "withdrawal")}
               className="w-full py-4 mt-4 rounded-xl text-sm font-bold text-white tc-gradient-green tc-shadow-green flex items-center justify-center gap-2"
             >
               {tab === "depot" ? <><ArrowDownLeft className="w-5 h-5" /> Confirmer le dépôt</> : <><ArrowUpRight className="w-5 h-5" /> Confirmer le retrait</>}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { User, Mail, Lock, ArrowRight, MailCheck } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ import AuthLayout, {
 
 export default function Inscription() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -59,14 +60,20 @@ export default function Inscription() {
           saveDemoAccount(normalizedEmail, password, normalizedName);
         }
         toast.success("Compte créé ! Bienvenue.");
-        navigate("/home", { replace: true });
+        const next = searchParams.get("next");
+        const dest = next && next.startsWith("/") && !next.startsWith("//") ? next : "/home";
+        navigate(dest, { replace: true });
         return;
       }
 
       setIsSuccess(true);
       toast.success("Vérifiez vos emails pour confirmer votre compte !");
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Erreur lors de la création du compte";
+      const raw = error instanceof Error ? error.message : "Erreur lors de la création du compte";
+      const message =
+        raw === "Failed to fetch"
+          ? "Impossible de joindre Supabase. Redémarrez npm run dev après avoir vérifié .env, ou vérifiez votre connexion internet."
+          : raw;
       if (message.toLowerCase().includes("already registered")) {
         toast.error("Ce compte existe déjà. Connectez-vous ou supprimez l'utilisateur dans Supabase Auth > Users.");
       } else {

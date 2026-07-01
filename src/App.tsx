@@ -1,11 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import { ConvexSupabaseProvider } from "@/components/providers/ConvexSupabaseProvider";
 import AppLayout from "@/components/layout/AppLayout";
 
 import Landing from "./pages/Landing";
@@ -43,15 +42,25 @@ const queryClient = new QueryClient({
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-[hsl(var(--tc-green))] border-t-transparent animate-spin" /></div>;
-  if (!user) return <Navigate to="/connexion" replace />;
+  if (!user) {
+    const next = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/connexion?next=${next}`} replace />;
+  }
   return <>{children}</>;
 }
 
 function GuestRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-[hsl(var(--tc-green))] border-t-transparent animate-spin" /></div>;
-  if (user) return <Navigate to="/home" replace />;
+  if (user) {
+    const params = new URLSearchParams(location.search);
+    const next = params.get("next");
+    const dest = next && next.startsWith("/") && !next.startsWith("//") ? next : "/home";
+    return <Navigate to={dest} replace />;
+  }
   return <>{children}</>;
 }
 
@@ -60,7 +69,6 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
-          <ConvexSupabaseProvider>
             <TooltipProvider>
               <Toaster />
               <Sonner />
@@ -74,8 +82,8 @@ const App = () => (
                   <Route path="/connexion" element={<GuestRoute><Connexion /></GuestRoute>} />
                   <Route path="/inscription" element={<GuestRoute><Inscription /></GuestRoute>} />
                   <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-                  <Route path="/rechercher" element={<ProtectedRoute><Rechercher /></ProtectedRoute>} />
-                  <Route path="/rejoindre/:id" element={<ProtectedRoute><Rejoindre /></ProtectedRoute>} />
+                  <Route path="/rechercher" element={<Rechercher />} />
+                  <Route path="/rejoindre/:id" element={<Rejoindre />} />
                   <Route path="/groupe/:id" element={<ProtectedRoute><GroupeDetail /></ProtectedRoute>} />
                   <Route path="/creer" element={<ProtectedRoute><CreerGroupe /></ProtectedRoute>} />
                   <Route path="/cotiser" element={<ProtectedRoute><Cotiser /></ProtectedRoute>} />
@@ -93,7 +101,6 @@ const App = () => (
                 </Routes>
               </BrowserRouter>
             </TooltipProvider>
-          </ConvexSupabaseProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

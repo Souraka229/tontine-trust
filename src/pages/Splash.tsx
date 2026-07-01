@@ -20,7 +20,7 @@ export default function Splash() {
       <p className="text-sm text-muted-foreground mb-2">Tontine digitale · Bitcoin · Mobile Money</p>
       <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mb-12">
         <div className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--tc-green))] animate-pulse" />
-        Sécurisé par Bitcoin
+        Sécurisé par registre · Bitcoin indexé
       </div>
       <div className="w-full max-w-xs flex flex-col gap-3">
         <button

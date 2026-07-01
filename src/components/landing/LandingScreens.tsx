@@ -1,5 +1,5 @@
 import { Bell, Bitcoin, Home, PlusCircle, Search, User, Wallet } from "lucide-react";
-import { formatFCFA, getBtcPool } from "@/lib/bitcoinWallet";
+import { formatFCFA } from "@/lib/bitcoinWallet";
 
 /** Aperçu fidèle à `Home.tsx` */
 export function HomeScreenPreview() {
@@ -86,14 +86,13 @@ export function WhatsAppScreenPreview() {
 
 /** Aperçu fidèle à `/crypto` */
 export function CryptoScreenPreview() {
-  const pool = getBtcPool();
   return (
     <div className="bg-white min-h-full text-left px-3 pt-7 pb-3">
       <p className="text-[10px] font-bold text-slate-800 mb-2">Trésor Bitcoin</p>
       <div className="rounded-xl tc-gradient-brand text-white p-3 mb-2">
-        <p className="text-[8px] opacity-80">Trésor multisig</p>
-        <p className="text-sm font-bold">{formatFCFA(pool.tvlFcfa)}</p>
-        <p className="text-[7px] opacity-75 mt-0.5">{pool.btcReserve.toFixed(2)} BTC · {pool.apy}% APY</p>
+        <p className="text-[8px] opacity-80">Registre Supabase</p>
+        <p className="text-sm font-bold">{formatFCFA(24_800_000)}</p>
+        <p className="text-[7px] opacity-75 mt-0.5">0,42 BTC · 8,4% APY</p>
       </div>
       <div className="rounded-xl bg-amber-50 border border-amber-100 p-2 flex items-center gap-2">
         <Bitcoin className="w-4 h-4 text-amber-600" />

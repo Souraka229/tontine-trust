@@ -5,9 +5,6 @@ import TopBar from "@/components/layout/TopBar";
 import TCAvatar from "@/components/ui/tc-avatar";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { isConvexConfigured } from "@/lib/convex";
 
 interface Group {
   id: string;
@@ -36,43 +33,7 @@ export default function Rechercher() {
   const [loading, setLoading] = useState(true);
   const [myGroupIds, setMyGroupIds] = useState<string[]>([]);
 
-  const convexOpenGroups = useQuery(
-    api.tontines.listOpenGroups,
-    isConvexConfigured && user ? {} : "skip"
-  );
-  const convexMyGroups = useQuery(
-    api.tontines.listMyGroups,
-    isConvexConfigured && user ? {} : "skip"
-  );
-
   useEffect(() => {
-    if (!isConvexConfigured) return;
-    if (convexOpenGroups) {
-      setGroups(
-        convexOpenGroups.map((g) => ({
-          id: g.id,
-          name: g.name,
-          initials: g.initials,
-          color: g.color as Group["color"],
-          contribution_amount: g.contributionAmount,
-          frequency: g.frequency,
-          members_count: g.membersCount,
-          max_members: g.maxMembers,
-          min_score: g.minScore,
-          status: "pending",
-          guarantee_deposit: 0,
-          penalty_rate: g.penaltyRate,
-        }))
-      );
-      setLoading(false);
-    }
-    if (convexMyGroups) {
-      setMyGroupIds(convexMyGroups.map((g) => g.id));
-    }
-  }, [convexMyGroups, convexOpenGroups]);
-
-  useEffect(() => {
-    if (isConvexConfigured) return;
     supabase
       .from("groups")
       .select("*")

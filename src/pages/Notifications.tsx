@@ -3,9 +3,6 @@ import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/layout/TopBar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { isConvexConfigured } from "@/lib/convex";
 
 interface Notification {
   id: string;
@@ -31,31 +28,8 @@ export default function Notifications() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const convexNotifications = useQuery(
-    api.notifications.listMine,
-    isConvexConfigured && user ? {} : "skip"
-  );
-  const markNotificationRead = useMutation(api.notifications.markRead);
 
   useEffect(() => {
-    if (!isConvexConfigured) return;
-    if (!convexNotifications) return;
-    setNotifications(
-      convexNotifications.map((n) => ({
-        id: n.id,
-        type: n.type,
-        title: n.title,
-        message: n.message,
-        is_read: n.read,
-        color: n.color,
-        navigate_to: n.navigateTo ?? "",
-        created_at: new Date(n.createdAt).toISOString(),
-      }))
-    );
-  }, [convexNotifications]);
-
-  useEffect(() => {
-    if (isConvexConfigured) return;
     if (!user) return;
     supabase
       .from("notifications")
@@ -68,11 +42,7 @@ export default function Notifications() {
   const handleClick = async (n: Notification) => {
     if (!n.is_read) {
       try {
-        if (isConvexConfigured) {
-          await markNotificationRead({ notificationId: n.id as never });
-        } else {
-          await supabase.from("notifications").update({ is_read: true }).eq("id", n.id);
-        }
+        await supabase.from("notifications").update({ is_read: true }).eq("id", n.id);
       } catch {
         // silent
       }

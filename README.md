@@ -13,7 +13,7 @@ Projet de soutenance : moderniser la tontine informelle (ROSCA) sans exclure les
 | **Tontine ROSCA** | Créer un groupe, inviter par lien, définir montant/fréquence/ordre de passage, activer le premier tour |
 | **Cotisations FCFA** | Portefeuille interne + paiement Kkiapay (sandbox) ; prélèvement et suivi par tour |
 | **Trésor Bitcoin** | Conversion FCFA → sats, pool collectif, cours live CoinGecko, engagements signés |
-| **Score de confiance** | Ponctualité, participation, ancienneté — débloque les groupes premium |
+| **Garde collective** | Validation 3/5 des gardiens avant chaque décaissement (inspirée Bitsacco) |
 | **Bot WhatsApp** | Commandes `/solde`, `/groupes`, `/cotiser`, `/bitcoin`, `/liquidity`, `/score`, `/notifs` |
 | **PWA** | Installable sur mobile (manifest + service worker) |
 
