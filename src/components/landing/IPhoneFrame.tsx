@@ -26,7 +26,7 @@ const sizeClass = {
 export default function IPhoneFrame({
   children,
   imageSrc,
-  imageAlt = "Aperçu TontineChain sur iPhone",
+  imageAlt = "Aperçu HACKBIT sur iPhone",
   className = "",
   tilt = "none",
   size = "md",

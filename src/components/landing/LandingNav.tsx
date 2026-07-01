@@ -32,7 +32,7 @@ export default function LandingNav({ menuOpen, onToggleMenu, onCloseMenu }: Land
           <div className="w-9 h-9 rounded-xl tc-gradient-brand flex items-center justify-center text-white font-black text-sm">
             T
           </div>
-          <span className="font-bold text-lg text-slate-900">TontineChain</span>
+          <span className="font-bold text-lg text-slate-900">HACKBIT</span>
         </button>
 
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">

@@ -19,7 +19,7 @@ export default function PublicNav() {
             <Shield className="w-4 h-4 text-white" />
           </div>
           <span className="font-semibold text-sm text-[hsl(var(--tc-ink))] hidden sm:inline tracking-tight">
-            TontineChain
+            HACKBIT
           </span>
         </button>
 

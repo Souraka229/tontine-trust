@@ -17,7 +17,7 @@ export default function DesktopNav() {
     <aside className="hidden md:flex w-64 shrink-0 flex-col border-r border-border bg-card/50 backdrop-blur-sm min-h-screen sticky top-0">
       <div className="px-5 py-6 border-b border-border/60">
         <button type="button" onClick={() => navigate("/home")} className="text-left">
-          <p className="text-lg font-bold text-[hsl(var(--tc-brand))]">TontineChain</p>
+          <p className="text-lg font-bold text-[hsl(var(--tc-brand))]">HACKBIT</p>
           <p className="text-[11px] text-muted-foreground mt-0.5">Tontine · FCFA · Bitcoin</p>
         </button>
       </div>

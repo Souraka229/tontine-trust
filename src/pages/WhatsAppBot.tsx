@@ -34,7 +34,7 @@ export default function WhatsAppBot() {
     {
       id: "0",
       from: "bot",
-      text: "Bienvenue sur *TontineChain Bot*.\nTapez /aide ou *AIDE* pour le menu.\n*CREER* · *REJOINDRE CODE* · /bitcoin · /solde",
+      text: "Bienvenue sur *HACKBIT Bot*.\nTapez /aide ou *AIDE* pour le menu.\n*CREER* · *REJOINDRE CODE* · /bitcoin · /solde",
       time: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
@@ -100,7 +100,7 @@ export default function WhatsAppBot() {
           <MessageCircle className="w-5 h-5 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-white text-sm font-medium truncate">TontineChain Bot</p>
+          <p className="text-white text-sm font-medium truncate">HACKBIT Bot</p>
           <p className="text-[10px] text-[#8696a0]">
             {user ? `Connecté · ${profile?.name ?? "Membre"}` : "Simulateur web · optionnel"}
           </p>

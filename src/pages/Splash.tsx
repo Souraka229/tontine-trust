@@ -16,7 +16,7 @@ export default function Splash() {
       <div className="w-20 h-20 rounded-2xl tc-gradient-green flex items-center justify-center tc-shadow-green mb-6">
         <Shield className="w-10 h-10 text-white" />
       </div>
-      <h1 className="text-2xl font-bold mb-1">TontineChain</h1>
+      <h1 className="text-2xl font-bold mb-1">HACKBIT</h1>
       <p className="text-sm text-muted-foreground mb-2">Tontine digitale · Bitcoin · Mobile Money</p>
       <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mb-12">
         <div className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--tc-green))] animate-pulse" />

@@ -182,7 +182,7 @@ export default function CreerGroupe() {
                 color: "text-[hsl(var(--tc-amber))]",
                 bg: "bg-[hsla(38,92%,50%,0.1)]",
                 title: "Versement automatique",
-                body: "Lorsque TOUS les membres ont cotisé dans un tour, TontineChain verse automatiquement la cagnotte au bénéficiaire de ce tour. Aucune action manuelle requise.",
+                body: "Lorsque TOUS les membres ont cotisé dans un tour, HACKBIT verse automatiquement la cagnotte au bénéficiaire de ce tour. Aucune action manuelle requise.",
               },
               {
                 icon: Lock,

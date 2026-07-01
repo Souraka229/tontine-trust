@@ -7,7 +7,7 @@ export const isConvexConfigured = Boolean(rawConvexUrl);
 
 if (!isConvexConfigured) {
   console.warn(
-    "[TontineChain] VITE_CONVEX_URL est absent. Lancez `npx convex dev` puis copiez l'URL dans .env.local."
+    "[HACKBIT] VITE_CONVEX_URL est absent. Lancez `npx convex dev` puis copiez l'URL dans .env.local."
   );
 }
 

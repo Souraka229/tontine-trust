@@ -89,7 +89,7 @@ export default function Inscription() {
   return (
     <AuthLayout
       title="Créer un compte"
-      subtitle="Rejoignez TontineChain en quelques secondes. Votre portefeuille FCFA sera prêt immédiatement."
+      subtitle="Rejoignez HACKBIT en quelques secondes. Votre portefeuille FCFA sera prêt immédiatement."
       footer={
         !isSuccess ? (
           <p className="text-sm text-slate-500">
